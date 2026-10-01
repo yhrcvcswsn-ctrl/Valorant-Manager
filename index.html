@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VALORANT Manager — 감독의 길 (2026 VCT & 국제대회 · VLR Agent Data · 최신 로스터)</title>
@@ -3792,6 +3796,35 @@ header{position:sticky;z-index:50;}
   else enableNavScroll();
   const mo=new MutationObserver(enableNavScroll);
   mo.observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
+
+<script><!-- VM_CACHE_UPDATE_FIX_V1 -->
+(() => {
+  // GitHub Pages/CDN 캐시 때문에 index.html이 오래된 상태로 남는 문제를 줄인다.
+  // 현재 페이지가 먼저 로드된 뒤 HEAD로 최신 배포의 ETag/Last-Modified를 확인하고,
+  // 변경되면 cache-busting URL로 한 번만 새로고침한다.
+  const KEY='vm_last_server_version';
+  let busy=false;
+  async function checkForUpdate() {
+    if (busy || document.visibilityState === 'hidden') return;
+    busy=true;
+    try {
+      const url=location.pathname + (location.search ? location.search+'&' : '?') + '__vm_update_check=' + Date.now();
+      const r=await fetch(url, {method:'HEAD', cache:'no-store', credentials:'same-origin'});
+      if (!r.ok) return;
+      const version=(r.headers.get('etag')||'')+'|'+(r.headers.get('last-modified')||'')+'|'+(r.headers.get('content-length')||'');
+      const prev=sessionStorage.getItem(KEY);
+      if (!prev) { sessionStorage.setItem(KEY,version); return; }
+      if (version && prev !== version) {
+        sessionStorage.setItem(KEY,version);
+        const bust='__vm_v='+encodeURIComponent(version.slice(0,80));
+        location.replace(location.pathname+'?'+bust);
+      }
+    } catch(e) {} finally { busy=false; }
+  }
+  setTimeout(checkForUpdate, 5000);
+  setInterval(checkForUpdate, 30000);
 })();
 </script>
 </body>
