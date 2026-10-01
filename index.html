@@ -1055,6 +1055,19 @@ header{position:sticky;z-index:50;}
 .match-preview-stage1,.match-preview-stage2{box-shadow:0 18px 50px rgba(255,70,85,.25),inset 0 1px 0 rgba(255,255,255,.08)!important;}
 .match-preview-champions{box-shadow:0 18px 60px rgba(245,185,66,.22),inset 0 1px 0 rgba(255,255,255,.08)!important;}
 </style>
+<style>
+.map-veto-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;}
+.map-veto-card{position:relative;min-height:92px;border:1px solid #263447;background:#0d141e;border-radius:12px;padding:14px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;justify-content:space-between;text-align:left;}
+.map-veto-card:hover{border-color:#64748b;transform:translateY(-1px);background:#121b27;}
+.map-veto-card.selected{border-color:#ff4655;box-shadow:0 0 0 1px rgba(255,70,85,.3) inset;background:rgba(255,70,85,.08);}
+.map-veto-card.disabled{opacity:.28;cursor:not-allowed;transform:none;}
+.map-veto-card .map-code{font-size:10px;color:#718096;font-weight:800;letter-spacing:.12em;}
+.map-veto-card .map-name{font-size:18px;color:#fff;font-weight:900;}
+.map-veto-card .map-action{font-size:9px;color:#94a3b8;font-weight:800;}
+.map-veto-summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.map-veto-summary>div{background:#0b1119;border:1px solid #202c3c;border-radius:9px;padding:9px;}
+@media(max-width:700px){.map-veto-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.map-veto-summary{grid-template-columns:1fr;}}
+</style>
 </head>
 <body class="min-h-screen flex flex-col antialiased bg-val-dark select-none">
 
@@ -1828,7 +1841,10 @@ header{position:sticky;z-index:50;}
             return `<div class="${sizeClass} ${badgeColor} team-logo-badge shadow flex-shrink-0" title="${name}">${abbr}</div>`;
         }
 
-        const MAP_POOL = ["Ascent", "Bind", "Haven", "Split", "Icebox", "Breeze", "Lotus", "Sunset", "Abyss"];
+        const MAP_POOL = ["Summit", "Abyss", "Sunset", "Lotus", "Ascent", "Split", "Haven"];
+        const MAP_DISPLAY_NAMES = { Summit: "서밋", Abyss: "어비스", Sunset: "선셋", Lotus: "로터스", Ascent: "어센트", Split: "스플릿", Haven: "헤이븐" };
+        const mapDisplayName = map => MAP_DISPLAY_NAMES[map] || map;
+        window.mapVetoState = null;
         
         const ROLES = [
             { id: "타격대", name: "타격대", icon: "⚔️", color: "text-red-400", agents: ["Jett", "Raze", "Reyna", "Yoru", "Neon", "Iso"] },
@@ -1879,7 +1895,7 @@ header{position:sticky;z-index:50;}
                     const payload = JSON.parse(reader.result);
                     const loaded = payload?.state || payload;
                     if (!loaded || typeof loaded !== 'object' || !loaded.myTeamName || !Array.isArray(loaded.players)) throw new Error('invalid');
-                    state = loaded; currentPage = payload?.currentPage || 'dashboard'; saveGameLocal(); renderApp(); showToast('세이브 파일을 불러왔어!');
+                    state = loaded; ensureMapTrainingState(); currentPage = payload?.currentPage || 'dashboard'; saveGameLocal(); renderApp(); showToast('세이브 파일을 불러왔어!');
                 } catch (e) { showToast('올바른 VALORANT Manager 세이브 파일이 아니야.'); }
                 finally { event.target.value = ''; }
             };
@@ -1892,7 +1908,7 @@ header{position:sticky;z-index:50;}
                 const raw = localStorage.getItem(LOCAL_SAVE_KEY); if (!raw) return false;
                 const payload = JSON.parse(raw); const loaded = payload?.state;
                 if (!loaded || typeof loaded !== 'object' || !loaded.myTeamName || !Array.isArray(loaded.players)) return false;
-                state = loaded; currentPage = payload.currentPage || 'dashboard'; return true;
+                state = loaded; ensureMapTrainingState(); currentPage = payload.currentPage || 'dashboard'; return true;
             } catch (e) { return false; }
         }
 
@@ -2528,6 +2544,8 @@ header{position:sticky;z-index:50;}
                 coach: 45,
                 analyst: 40,
                 trainingDone: false,
+                mapTrainingDone: false,
+                mapTraining: Object.fromEntries(MAP_POOL.map(m => [m, { attack: 0, defense: 0, retake: 0 }])),
                 yearWins: 0,
                 yearLosses: 0,
                 tactics: {
@@ -3344,12 +3362,12 @@ header{position:sticky;z-index:50;}
                             </div>
                             ${renderMatchPreview(previewOpp, phase, isInternational, isQualified)}
                             <div class="match-start-hero mt-3">
-                                <button class="match-start-main" onclick="playMatch()">
+                                <button type="button" class="match-start-main" onclick="window.startNextMatch && window.startNextMatch(); return false;">
                                     <span class="match-start-icon">⚔️</span>
                                     <span class="match-start-copy"><strong>${actionBtnLabel}</strong><small>전술 확인 후 바로 경기 시작</small></span>
                                     <span class="match-start-arrow">›</span>
                                 </button>
-                                <button class="match-skip-btn" onclick="advanceWeek()">⏭ 주차 넘기기</button>
+                                <button type="button" class="match-skip-btn" onclick="window.advanceWeek && window.advanceWeek(); return false;">⏭ 주차 넘기기</button>
                             </div>
                         </section>
 
@@ -3533,11 +3551,89 @@ header{position:sticky;z-index:50;}
             `;
         }
 
+        function ensureMapTrainingState() {
+            if (!state) return;
+            if (!state.mapTraining || typeof state.mapTraining !== 'object') state.mapTraining = {};
+            MAP_POOL.forEach(map => {
+                const cur = state.mapTraining[map] || {};
+                state.mapTraining[map] = {
+                    attack: Number.isFinite(cur.attack) ? Math.max(0, Math.min(10, cur.attack)) : 0,
+                    defense: Number.isFinite(cur.defense) ? Math.max(0, Math.min(10, cur.defense)) : 0,
+                    retake: Number.isFinite(cur.retake) ? Math.max(0, Math.min(10, cur.retake)) : 0
+                };
+            });
+            if (typeof state.mapTrainingDone !== 'boolean') state.mapTrainingDone = false;
+        }
+
+        function getMapTrainingBonus(map) {
+            ensureMapTrainingState();
+            const t = state?.mapTraining?.[map];
+            if (!t) return 0;
+            // 한 맵에 축적한 훈련량이 클수록 해당 맵에서 소폭의 전력 보너스를 받습니다. 최대 +6.
+            return Math.min(6, Math.floor((t.attack + t.defense + t.retake) / 2));
+        }
+
+        function trainMap(map, type) {
+            if (!careerActionAllowed()) return;
+            ensureMapTrainingState();
+            if (!MAP_POOL.includes(map)) return;
+            if (state.mapTrainingDone) {
+                showToast('이번 주 맵 훈련은 이미 완료했습니다.');
+                return;
+            }
+            const valid = ['attack','defense','retake'];
+            if (!valid.includes(type)) return;
+            const t = state.mapTraining[map];
+            if (t[type] >= 10) {
+                showToast(`${mapDisplayName(map)} ${type === 'attack' ? '공격 셋업' : type === 'defense' ? '수비 구조' : '리테이크'} 숙련도가 최대입니다.`);
+                return;
+            }
+            const gain = 1 + (Math.random() < 0.35 ? 1 : 0);
+            t[type] = Math.min(10, t[type] + gain);
+            state.mapTrainingDone = true;
+            const label = type === 'attack' ? '공격 셋업' : type === 'defense' ? '수비 구조' : '리테이크 & 미드라운드';
+            state.logs.push(`🗺️ [맵 훈련] ${mapDisplayName(map)} · ${label} +${gain}`);
+            showToast(`${mapDisplayName(map)} ${label} 훈련 완료!`);
+            renderApp();
+        }
+
         function renderTrainingView() {
+            ensureMapTrainingState();
             const isTrained = state.trainingDone;
+            const mapTrained = state.mapTrainingDone;
             const btnStyle = isTrained ? "bg-gray-800 text-gray-500 border-gray-700 cursor-not-allowed" : "bg-val-dark hover:bg-val-border text-white border-val-border hover:border-val-red";
             const rows=(state.players||[]).map((p,i)=>{ ensureIndividualTrainingState(p); const d=p.individualTrainingDone; const dis=d?'disabled':''; return `<div class="${d?'bg-gray-900/60 border-gray-700':'bg-val-dark border-val-border'} border rounded-xl p-4"><div class="flex flex-col md:flex-row md:items-center justify-between gap-3"><div><div class="flex items-center gap-2"><b class="text-white">${p.name}</b><span class="text-[10px] px-2 py-0.5 rounded bg-val-panel border border-val-border text-val-muted">${p.role}</span>${d?'<span class="text-[10px] text-green-400 font-bold">✓ 완료</span>':''}</div><div class="grid grid-cols-3 gap-2 mt-2 text-[10px]"><div class="bg-val-panel rounded px-2 py-1 text-white">OVR <b>${p.ovr}</b></div><div class="bg-val-panel rounded px-2 py-1 text-cyan-300">에임 <b>${p.aim}</b></div><div class="bg-val-panel rounded px-2 py-1 text-purple-300">IGL <b>${p.igl}</b></div></div></div><div class="grid grid-cols-2 sm:grid-cols-4 gap-2"><button ${dis} onclick="trainIndividual(${i},'rank')" class="p-2 rounded-lg border ${d?'opacity-50 cursor-not-allowed border-gray-700':'border-red-500/30 hover:bg-red-500/10'}"><b class="text-xs text-white">🏆 랭킹 1등 도전</b><div class="text-[9px] text-val-muted">OVR 성장</div></button><button ${dis} onclick="trainIndividual(${i},'igl')" class="p-2 rounded-lg border ${d?'opacity-50 cursor-not-allowed border-gray-700':'border-purple-500/30 hover:bg-purple-500/10'}"><b class="text-xs text-white">🧠 IGL 연습</b><div class="text-[9px] text-val-muted">IGL 상승</div></button><button ${dis} onclick="trainIndividual(${i},'aim')" class="p-2 rounded-lg border ${d?'opacity-50 cursor-not-allowed border-gray-700':'border-cyan-500/30 hover:bg-cyan-500/10'}"><b class="text-xs text-white">🎯 에임 연습</b><div class="text-[9px] text-val-muted">에임 상승</div></button><button ${dis} onclick="trainIndividual(${i},'utility')" class="p-2 rounded-lg border ${d?'opacity-50 cursor-not-allowed border-gray-700':'border-green-500/30 hover:bg-green-500/10'}"><b class="text-xs text-white">🛠️ 유틸/전술</b><div class="text-[9px] text-val-muted">전술 성장</div></button></div></div></div>`}).join('');
-            return `<div class="flex flex-col gap-6"><div class="grid lg:grid-cols-2 gap-6"><div class="bg-val-panel border border-val-border rounded-xl p-5"><div class="border-b border-val-border pb-3 mb-4 flex justify-between"><h2 class="text-lg font-bold text-white">👥 팀 훈련</h2><span class="text-xs font-bold ${isTrained?'text-val-red':'text-green-400'}">${isTrained?'이번 주 완료':'진행 가능'}</span></div><p class="text-xs text-val-muted mb-4">팀 전체 훈련은 주 1회 선택할 수 있습니다.</p><div class="flex flex-col gap-3"><button class="p-4 rounded-xl border text-left ${btnStyle}" onclick="doTrain('aim')" ${isTrained?'disabled':''}><b>🎯 팀 에임 및 격발</b><div class="text-xs text-green-400 mt-1">폼 +4</div></button><button class="p-4 rounded-xl border text-left ${btnStyle}" onclick="doTrain('tactic')" ${isTrained?'disabled':''}><b>🧠 팀 전술 & 리테이크</b><div class="text-xs text-green-400 mt-1">폼 +2 · 코칭 +2</div></button><button class="p-4 rounded-xl border text-left ${btnStyle}" onclick="doTrain('team')" ${isTrained?'disabled':''}><b>🤝 팀 케미스트리</b><div class="text-xs text-green-400 mt-1">사기 +6</div></button></div></div><div class="bg-val-panel border border-val-border rounded-xl p-5"><div class="border-b border-val-border pb-3 mb-4"><h2 class="text-lg font-bold text-white">👤 개인 훈련</h2><p class="text-xs text-val-muted mt-1">선수마다 주 1회씩 서로 다른 훈련을 선택할 수 있습니다.</p></div><div class="flex flex-col gap-3">${rows}</div></div></div><div class="bg-val-panel border border-val-border rounded-xl p-5"><h2 class="text-lg font-bold text-white">스태프 & 분석 시스템</h2><div class="grid grid-cols-2 gap-3 mt-4"><div class="bg-val-dark p-3 rounded-lg border border-val-border text-center"><div class="text-xs text-val-muted">코치진 능력</div><div class="text-2xl font-black text-val-accent">Lv.${state.coach}</div></div><div class="bg-val-dark p-3 rounded-lg border border-val-border text-center"><div class="text-xs text-val-muted">데이터 분석력</div><div class="text-2xl font-black text-val-accent">Lv.${state.analyst}</div></div></div><div class="grid md:grid-cols-2 gap-3 mt-4"><button class="bg-val-card border border-val-border p-3 rounded-xl font-bold text-sm flex justify-between" onclick="upgradeStaff('coach')"><span>👨‍🏫 전력 코치 연수</span><span class="text-green-400">$55,000</span></button><button class="bg-val-card border border-val-border p-3 rounded-xl font-bold text-sm flex justify-between" onclick="upgradeStaff('analyst')"><span>📊 분석 시스템 업그레이드</span><span class="text-green-400">$40,000</span></button></div></div></div>`;
+
+            const mapRows = MAP_POOL.map(map => {
+                const t = state.mapTraining[map];
+                const total = t.attack + t.defense + t.retake;
+                const bonus = getMapTrainingBonus(map);
+                const disabled = mapTrained ? 'disabled' : '';
+                const disClass = mapTrained ? 'opacity-50 cursor-not-allowed' : '';
+                return `<div class="bg-val-dark border border-val-border rounded-xl p-4">
+                    <div class="flex items-center justify-between gap-3 mb-3">
+                        <div><div class="text-base font-black text-white">🗺️ ${mapDisplayName(map)}</div><div class="text-[10px] text-val-muted mt-0.5">맵 숙련도 ${total}/30 · 경기 보너스 <span class="text-green-400 font-bold">+${bonus}</span></div></div>
+                        <div class="text-[10px] px-2 py-1 rounded bg-val-panel border border-val-border text-val-muted">${mapTrained ? '이번 주 완료' : '주 1회'}</div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button type="button" ${disabled} onclick="trainMap('${map}','attack')" class="p-2 rounded-lg border border-red-500/30 hover:bg-red-500/10 ${disClass}"><b class="text-xs text-white">⚔️ 공격 셋업</b><div class="text-[9px] text-val-muted mt-1">${t.attack}/10</div></button>
+                        <button type="button" ${disabled} onclick="trainMap('${map}','defense')" class="p-2 rounded-lg border border-blue-500/30 hover:bg-blue-500/10 ${disClass}"><b class="text-xs text-white">🛡️ 수비 구조</b><div class="text-[9px] text-val-muted mt-1">${t.defense}/10</div></button>
+                        <button type="button" ${disabled} onclick="trainMap('${map}','retake')" class="p-2 rounded-lg border border-purple-500/30 hover:bg-purple-500/10 ${disClass}"><b class="text-xs text-white">🔄 리테이크</b><div class="text-[9px] text-val-muted mt-1">${t.retake}/10</div></button>
+                    </div>
+                </div>`;
+            }).join('');
+
+            return `<div class="flex flex-col gap-6">
+                <div class="grid lg:grid-cols-2 gap-6">
+                    <div class="bg-val-panel border border-val-border rounded-xl p-5"><div class="border-b border-val-border pb-3 mb-4 flex justify-between"><h2 class="text-lg font-bold text-white">👥 팀 훈련</h2><span class="text-xs font-bold ${isTrained?'text-val-red':'text-green-400'}">${isTrained?'이번 주 완료':'진행 가능'}</span></div><p class="text-xs text-val-muted mb-4">팀 전체 훈련은 주 1회 선택할 수 있습니다.</p><div class="flex flex-col gap-3"><button class="p-4 rounded-xl border text-left ${btnStyle}" onclick="doTrain('aim')" ${isTrained?'disabled':''}><b>🎯 팀 에임 및 격발</b><div class="text-xs text-green-400 mt-1">폼 +4</div></button><button class="p-4 rounded-xl border text-left ${btnStyle}" onclick="doTrain('tactic')" ${isTrained?'disabled':''}><b>🧠 팀 전술 & 리테이크</b><div class="text-xs text-green-400 mt-1">폼 +2 · 코칭 +2</div></button><button class="p-4 rounded-xl border text-left ${btnStyle}" onclick="doTrain('team')" ${isTrained?'disabled':''}><b>🤝 팀 케미스트리</b><div class="text-xs text-green-400 mt-1">사기 +6</div></button></div></div>
+                    <div class="bg-val-panel border border-val-border rounded-xl p-5"><div class="border-b border-val-border pb-3 mb-4"><h2 class="text-lg font-bold text-white">👤 개인 훈련</h2><p class="text-xs text-val-muted mt-1">선수마다 주 1회씩 서로 다른 훈련을 선택할 수 있습니다.</p></div><div class="flex flex-col gap-3">${rows}</div></div>
+                </div>
+                <div class="bg-val-panel border border-val-border rounded-xl p-5">
+                    <div class="border-b border-val-border pb-3 mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2"><div><h2 class="text-lg font-bold text-white">🗺️ 맵별 훈련</h2><p class="text-xs text-val-muted mt-1">이번 주에는 한 맵의 한 항목만 훈련할 수 있습니다. 훈련한 맵은 실제 경기에서 소폭의 전력 보너스를 받습니다.</p></div><span class="text-xs font-bold ${mapTrained?'text-val-red':'text-green-400'}">${mapTrained?'이번 주 완료':'진행 가능'}</span></div>
+                    <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-3">${mapRows}</div>
+                </div>
+                <div class="bg-val-panel border border-val-border rounded-xl p-5"><h2 class="text-lg font-bold text-white">스태프 & 분석 시스템</h2><div class="grid grid-cols-2 gap-3 mt-4"><div class="bg-val-dark p-3 rounded-lg border border-val-border text-center"><div class="text-xs text-val-muted">코치진 능력</div><div class="text-2xl font-black text-val-accent">Lv.${state.coach}</div></div><div class="bg-val-dark p-3 rounded-lg border border-val-border text-center"><div class="text-xs text-val-muted">데이터 분석력</div><div class="text-2xl font-black text-val-accent">Lv.${state.analyst}</div></div></div><div class="grid md:grid-cols-2 gap-3 mt-4"><button class="bg-val-card border border-val-border p-3 rounded-xl font-bold text-sm flex justify-between" onclick="upgradeStaff('coach')"><span>👨‍🏫 전력 코치 연수</span><span class="text-green-400">$55,000</span></button><button class="bg-val-card border border-val-border p-3 rounded-xl font-bold text-sm flex justify-between" onclick="upgradeStaff('analyst')"><span>📊 분석 시스템 업그레이드</span><span class="text-green-400">$40,000</span></button></div></div>
+            </div>`;
         }
 
         function renderFinanceView() {
@@ -4373,7 +4469,7 @@ header{position:sticky;z-index:50;}
                     <div class="bg-val-dark p-3 rounded-lg border border-val-border flex justify-between items-center">
                         <div>
                             <div class="text-[10px] text-val-muted font-bold">MAP ${m.mapIndex}</div>
-                            <div class="text-sm font-bold text-white">${m.mapName}</div>
+                            <div class="text-sm font-bold text-white">${mapDisplayName(m.mapName)}</div>
                         </div>
                         <div class="text-base font-black ${m.myScore > m.oppScore ? 'text-green-400' : 'text-val-red'}">${m.myScore} - ${m.oppScore}</div>
                     </div>
@@ -4630,7 +4726,172 @@ function renderMatchPreview(opp, phase, isInternational, isQualified) {
       </div>`;
 }
 
-function playMatch() {
+function openMapVetoModal(opp, phase, isInternational) {
+    // 맵 밴/픽 상태를 항상 새로 생성한다. 이전 경기의 중간 상태가 남아
+    // 경기 시작을 막는 문제를 방지한다.
+    if (!opp || !opp.name) throw new Error('MAP_VETO_INVALID_OPPONENT');
+    const teamA = String(state.myTeamName || '우리 팀');
+    const teamB = String(opp.name);
+    window.mapVetoState = {
+        teamA, teamB, phaseName: phase.name, isInternational,
+        oppSnapshot: {...opp}, maps: [...MAP_POOL], banned: [], picks: [],
+        step: 0,
+        sequence: [
+            {type:'ban', team:teamA, label:`${teamA} 밴`},
+            {type:'ban', team:teamB, label:`${teamB} 밴`},
+            {type:'pick', team:teamA, label:`${teamA} 픽`},
+            {type:'pick', team:teamB, label:`${teamB} 픽`},
+            {type:'ban', team:teamA, label:`${teamA} 밴`},
+            {type:'ban', team:teamB, label:`${teamB} 밴`}
+        ]
+    };
+    try {
+        renderMapVetoModal();
+    } catch (err) {
+        console.error('MAP_VETO_RENDER_ERROR:', err);
+        // 렌더링 실패 시에도 경기 진행 자체가 막히지 않도록
+        // 간단한 밴/픽 화면으로 복구한다.
+        renderSimpleMapVetoFallback();
+    }
+}
+
+function renderSimpleMapVetoFallback() {
+    const v = window.mapVetoState;
+    if (!v) return;
+    const step = v.sequence[v.step];
+    const used = new Set([...v.banned, ...v.picks.map(x => x.map)]);
+    const available = v.maps.filter(m => !used.has(m));
+    const buttons = available.map(m => `<button type="button" style="padding:12px;margin:4px;border:1px solid #334155;border-radius:8px;background:#151b25;color:#fff;cursor:pointer" onclick="window.selectMapVeto('${m}')">${mapDisplayName(m)} · ${step.type === 'pick' ? '픽' : '밴'}</button>`).join('');
+    openModal(`<div style="padding:8px;color:#fff"><div style="font-size:11px;color:#ff4655;font-weight:800">MAP VETO · BO3</div><h2 style="font-size:24px;font-weight:900;margin:6px 0 4px">맵 밴 / 픽</h2><p style="font-size:12px;color:#94a3b8">${v.teamA} vs ${v.teamB}</p><div style="margin:16px 0;padding:12px;background:#10151d;border-radius:10px">${step.type === 'pick' ? '픽' : '밴'}할 맵을 선택하세요 · ${step.team === v.teamA ? '우리팀' : '상대팀'}</div><div>${buttons}</div></div>`);
+}
+
+function renderMapVetoModal() {
+    const v = window.mapVetoState;
+    if (!v) return;
+    // 버튼이 동적으로 생성되는 모달에서도 항상 클릭 핸들러를 보장한다.
+    window.selectMapVeto = function(map) {
+        const current = window.mapVetoState;
+        if (!current || current.step >= current.sequence.length) return;
+        const step = current.sequence[current.step];
+        if (step.team !== current.teamA) return;
+        if (current.banned.includes(map) || current.picks.some(x => x.map === map)) return;
+        if (step.type === 'ban') current.banned.push(map);
+        else current.picks.push({team: step.team, map});
+        current.step++;
+        runCpuMapVetoSteps();
+    };
+    const stepInfo = v.sequence[v.step];
+    const remaining = v.maps.filter(m => !v.banned.includes(m) && !v.picks.some(x => x.map === m));
+    const active = stepInfo ? stepInfo.team : '결정';
+    const action = stepInfo?.type === 'pick' ? 'PICK' : 'BAN';
+    const actionKr = stepInfo?.type === 'pick' ? '픽' : '밴';
+    const canPick = stepInfo?.type === 'pick';
+    const used = new Set([...v.banned, ...v.picks.map(x=>x.map)]);
+    const cards = v.maps.map((map, i) => {
+        const isUsed = used.has(map);
+        return `<button type="button" class="map-veto-card ${isUsed?'disabled':''}" ${isUsed?'disabled':''} onclick="window.selectMapVeto('${map}')">
+            <span class="map-code">MAP 0${i+1}</span><span class="map-name">${mapDisplayName(map)}</span><span class="map-action">${isUsed ? (v.banned.includes(map)?'BANNED':'PICKED') : `${action} · ${active}`}</span>
+        </button>`;
+    }).join('');
+    const picksText = v.picks.length ? v.picks.map(x=>`${x.team===v.teamA?'우리팀':'상대'} · ${mapDisplayName(x.map)}`).join(' / ') : '아직 없음';
+    const bannedText = v.banned.length ? v.banned.map(x=>mapDisplayName(x)).join(' · ') : '아직 없음';
+    const done = v.step >= v.sequence.length;
+    const decider = remaining.length === 1 ? remaining[0] : null;
+
+    openModal(`<div class="flex flex-col gap-4 max-h-[82vh] overflow-y-auto">
+        <div class="flex items-start justify-between gap-3">
+            <div><div class="text-[10px] font-black tracking-[.18em] text-val-red">MAP VETO · BO3</div><h2 class="text-2xl font-black text-white mt-1">맵 밴 / 픽</h2><p class="text-xs text-val-muted mt-1">${v.teamA} vs ${v.teamB} · ${v.phaseName}</p></div>
+            <button type="button" class="text-val-muted hover:text-white text-xl" onclick="cancelMapVeto()">×</button>
+        </div>
+        <div class="bg-val-dark border border-val-border rounded-xl p-4">
+            ${done ? `<div class="text-center"><div class="text-xs text-green-400 font-black tracking-widest">MAP VETO COMPLETE</div><div class="text-xl text-white font-black mt-1">${mapDisplayName(decider)} · DECIDER</div><div class="text-xs text-val-muted mt-1">밴 4개 · 픽 2개 · 남은 1개가 3번째 맵입니다.</div></div>` : `<div class="flex items-center justify-between gap-3"><div><div class="text-[10px] text-val-muted">현재 선택</div><div class="text-lg font-black text-white mt-1">${active}</div></div><div class="text-right"><div class="text-[10px] text-val-muted">${action}</div><div class="text-xl font-black ${canPick?'text-green-400':'text-val-red'}">${actionKr}</div></div></div>`}
+        </div>
+        <div class="map-veto-grid">${cards}</div>
+        <div class="map-veto-summary"><div><div class="text-[10px] text-val-muted">우리팀 / 상대팀 픽</div><div class="text-xs text-white font-bold mt-1">${picksText}</div></div><div><div class="text-[10px] text-val-muted">밴</div><div class="text-xs text-white font-bold mt-1">${bannedText}</div></div><div><div class="text-[10px] text-val-muted">남은 맵</div><div class="text-xs text-white font-bold mt-1">${remaining.map(mapDisplayName).join(' · ')}</div></div></div>
+        ${done ? `<button type="button" class="bg-val-red hover:bg-val-redHover text-white font-black py-3 rounded-xl" onclick="confirmMapVeto()">⚔️ 이 맵풀로 경기 시작</button>` : `<div class="text-[10px] text-val-muted text-center">${canPick?'픽할 맵을 선택하세요.':'밴할 맵을 선택하세요.'}</div>`}
+    </div>`);
+}
+
+window.selectMapVeto = function(map) {
+    const v = window.mapVetoState;
+    if (!v || v.step >= v.sequence.length) return;
+    const step = v.sequence[v.step];
+    // 상대팀 차례는 자동으로 처리한다. 사용자는 우리팀의 밴/픽만 선택한다.
+    if (step.team !== v.teamA) return;
+    if (v.banned.includes(map) || v.picks.some(x=>x.map===map)) return;
+    if (step.type === 'ban') v.banned.push(map);
+    else v.picks.push({team:step.team, map});
+    v.step++;
+    runCpuMapVetoSteps();
+}
+
+function runCpuMapVetoSteps() {
+    const v = window.mapVetoState;
+    if (!v) return;
+    while (v.step < v.sequence.length && v.sequence[v.step].team !== v.teamA) {
+        const step = v.sequence[v.step];
+        const available = v.maps.filter(m => !v.banned.includes(m) && !v.picks.some(x=>x.map===m));
+        if (!available.length) break;
+        // 상대는 남은 맵 중 하나를 자동 선택한다.
+        const chosen = available[Math.floor(Math.random() * available.length)];
+        if (step.type === 'ban') v.banned.push(chosen);
+        else v.picks.push({team:step.team, map:chosen});
+        v.step++;
+    }
+    if (v.step >= v.sequence.length) {
+        renderMapVetoModal();
+        setTimeout(confirmMapVeto, 120);
+    } else {
+        renderMapVetoModal();
+    }
+}
+
+window.cancelMapVeto = function() {
+    window.mapVetoState = null;
+    closeModal();
+}
+
+window.confirmMapVeto = function() {
+    const v = window.mapVetoState;
+    if (!v || v.step < v.sequence.length) return;
+    const remaining = v.maps.filter(m => !v.banned.includes(m) && !v.picks.some(x => x.map === m));
+    if (remaining.length !== 1 || v.picks.length !== 2 || v.banned.length !== 4) return;
+    const orderedMaps = [v.picks.find(x=>x.team===v.teamA)?.map, v.picks.find(x=>x.team===v.teamB)?.map, remaining[0]].filter(Boolean);
+    const pending = {oppSnapshot:{...v.oppSnapshot}, maps:orderedMaps, phaseName:v.phaseName, isInternational:v.isInternational};
+    window.mapVetoState = null;
+    closeModal();
+    playMatch(true, pending);
+}
+
+function startNextMatch() {
+    try {
+        if (!state) { showToast('먼저 커리어를 시작해줘.'); return; }
+        if (typeof playMatch !== 'function') {
+            showToast('경기 시스템을 불러오지 못했습니다. 페이지를 새로고침해 주세요.');
+            return;
+        }
+        playMatch(false, null);
+    } catch (err) {
+        console.error('startNextMatch error:', err);
+        // 오류가 나더라도 원인 없이 동일 토스트만 반복하지 않도록
+        // 맵 밴/픽 상태를 초기화하고 한 번 더 안전하게 경기 화면을 연다.
+        window.mapVetoState = null;
+        try {
+            const phase = getPhaseName(state.week);
+            const teams = state.tier === 1 ? state.t1Teams : state.t2Teams;
+            const opp = teams?.find(t => t && t.name === state.matchPreviewOpponent && t.name !== state.myTeamName) || teams?.find(t => t && t.name !== state.myTeamName);
+            if (opp) {
+                openMapVetoModal(opp, phase, false);
+                return;
+            }
+        } catch (fallbackErr) {
+            console.error('startNextMatch fallback error:', fallbackErr);
+        }
+        showToast('경기 시작에 문제가 발생했습니다. 페이지를 새로고침한 뒤 다시 시도해줘.');
+    }
+}
+
+function playMatch(fromMapVeto = false, pendingVeto = null) {
             if (!careerActionAllowed()) return;
             if (getStartingPlayers().length < 5) {
                 showToast("선발 5명이 필요합니다. 로스터에서 식스맨을 교체해 주세요.");
@@ -4695,14 +4956,20 @@ function playMatch() {
 
             const currentTeams = state.tier === 1 ? state.t1Teams : state.t2Teams;
             const myTeamRef = currentTeams.find(t => t.name === state.myTeamName);
-            const opp = isInternational ? getInternationalOpponent() : (currentTeams.find(t => t.name === state.matchPreviewOpponent && t.name !== state.myTeamName) || currentTeams.filter(t => t.name !== state.myTeamName)[Math.floor(Math.random() * Math.max(1, currentTeams.length - 1))]);
+            let opp = fromMapVeto && pendingVeto?.oppSnapshot ? {...pendingVeto.oppSnapshot} : (isInternational ? getInternationalOpponent() : (currentTeams.find(t => t.name === state.matchPreviewOpponent && t.name !== state.myTeamName) || currentTeams.filter(t => t.name !== state.myTeamName)[Math.floor(Math.random() * Math.max(1, currentTeams.length - 1))]));
 
             if (!opp) {
                 showToast("경기 상대를 찾지 못했습니다.");
                 return;
             }
 
+            if (!fromMapVeto) {
+                openMapVetoModal(opp, phase, isInternational);
+                return;
+            }
+
             const expectation = getMatchExpectation(opp);
+            state.logs.push(`🗺️ [맵 밴/픽] ${pendingVeto.maps.map(mapDisplayName).join(' → ')} — ${state.myTeamName} vs ${opp.name}`);
             state.logs.push(`📊 [경기 예상] ${state.myTeamName} ${expectation.myPct}% : ${expectation.oppPct}% ${opp.name} — 전력 ${expectation.myPower} : ${expectation.oppPower}`);
 
             if (!isInternational) {
@@ -4712,16 +4979,18 @@ function playMatch() {
             let myMapsWon = 0;
             let oppMapsWon = 0;
             let playedMaps = [];
-            const shuffledMaps = [...MAP_POOL].sort(() => Math.random() - 0.5);
+            const selectedMaps = (fromMapVeto && pendingVeto?.maps?.length === 3) ? [...pendingVeto.maps] : [...MAP_POOL].sort(() => Math.random() - 0.5).slice(0,3);
 
             for (let i = 0; i < 3; i++) {
                 if (myMapsWon === 2 || oppMapsWon === 2) break;
 
                 const myPower = calculateTeamPower();
+                const currentMap = selectedMaps[i];
+                const mapTrainingBonus = getMapTrainingBonus(currentMap);
                 const baseOppPower = isInternational ? (opp.power + 4 + (state.year - 2026) * 1) : opp.power;
                 const oppPower = baseOppPower * (1 + getDifficultyConfig().opp);
 
-                const powerDiff = myPower - oppPower;
+                const powerDiff = (myPower + mapTrainingBonus) - oppPower;
                 const tacticMod = getTacticModifiers();
 
                 // 전술은 승패를 보장하지 않고 '기대 승률'만 바꾼다.
@@ -4750,9 +5019,10 @@ function playMatch() {
 
                 playedMaps.push({
                     mapIndex: i + 1,
-                    mapName: shuffledMaps[i],
+                    mapName: selectedMaps[i],
                     myScore: myRounds,
-                    oppScore: oppRounds
+                    oppScore: oppRounds,
+                    mapTrainingBonus
                 });
             }
 
@@ -4986,6 +5256,9 @@ function playMatch() {
             advanceWeek(true);
         }
 
+        window.startNextMatch = startNextMatch;
+        window.playMatch = playMatch;
+
         function archiveCurrentSeasonRecord() {
             if (!state) return;
             if (!state.careerStats) state.careerStats = { totalWins: 0, totalLosses: 0, seasons: [] };
@@ -5039,7 +5312,7 @@ function playMatch() {
                 } else {
                     if (evaluateCoachJobSecurity()) {
                         archiveCurrentSeasonRecord();
-                        state.year++; state.week = 1; state.yearWins = 0; state.yearLosses = 0; state.trainingDone = false; state.sponsorDealsUsed = 0; state.sponsorDealsMax = 2; state.sponsorDeals = [];
+                        state.year++; state.week = 1; state.yearWins = 0; state.yearLosses = 0; state.trainingDone = false; state.mapTrainingDone = false; state.sponsorDealsUsed = 0; state.sponsorDealsMax = 2; state.sponsorDeals = [];
                     // 계약이 끝났는데 새 제의를 받지 못했다면 1년 단위 재계약 상태로 유지한다.
                     if (!state.coachContractEndYear || state.coachContractEndYear <= state.year) state.coachContractEndYear = state.year + 1;
                     renderApp(); return;
@@ -5068,7 +5341,7 @@ function playMatch() {
                         }
                     }
 
-                    state.trainingDone = false;
+                    state.trainingDone = false; state.mapTrainingDone = false;
                     state.sponsorDealsUsed = 0;
                     state.sponsorDealsMax = 2;
                     state.sponsorDeals = [];
@@ -5102,7 +5375,7 @@ function playMatch() {
                 state.internationalMatchTarget = 0;
                 state.internationalPhaseType = null;
             }
-            state.trainingDone = false;
+            state.trainingDone = false; state.mapTrainingDone = false;
             if (Array.isArray(state.players)) state.players.forEach(p => { ensureIndividualTrainingState(p); p.individualTrainingDone = false; });
             if (Array.isArray(state.youth)) state.youth.forEach(y => { if (y.ovr < y.potential && Math.random() < (0.18 + state.youthLevel * 0.04) * getDifficultyConfig().growth) y.ovr = Math.min(y.potential, y.ovr + 1); });
 
