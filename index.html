@@ -622,6 +622,80 @@ header > div { min-width: 0 !important; }
 #global-nav .global-nav-btn{pointer-events:auto!important;position:relative;z-index:41;cursor:pointer;}
 header{position:sticky;z-index:50;}
 </style>
+
+<style id="mobile-top-nav-fixed-v2">
+/* 모바일 상단 탭: 로고/시즌 정보와 분리해서 항상 두 번째 줄에 표시 */
+@media (max-width: 700px) {
+  header {
+    overflow: visible !important;
+    padding: 8px 10px 0 !important;
+  }
+  header > div {
+    display: grid !important;
+    grid-template-columns: minmax(0,1fr) auto !important;
+    grid-template-rows: auto 44px !important;
+    width: 100% !important;
+    max-width: none !important;
+    gap: 6px 8px !important;
+    flex-wrap: initial !important;
+    align-items: center !important;
+  }
+  header > div > div:first-child {
+    min-width: 0 !important;
+  }
+  header > div > div:first-child .text-lg {
+    font-size: 15px !important;
+    line-height: 1.1 !important;
+  }
+  header > div > div:first-child .text-\[10px\] {
+    font-size: 7px !important;
+    margin-top: 2px !important;
+  }
+  #season-info {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    margin-left: 0 !important;
+    max-width: 43vw !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+  #global-nav {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    order: initial !important;
+    flex-basis: auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 44px !important;
+    display: flex !important;
+    align-items: stretch !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    flex-wrap: nowrap !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    touch-action: pan-x !important;
+    overscroll-behavior-x: contain !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  #global-nav::-webkit-scrollbar { display: none !important; }
+  #global-nav .global-nav-btn {
+    display: inline-flex !important;
+    flex: 0 0 auto !important;
+    width: max-content !important;
+    min-width: max-content !important;
+    height: 42px !important;
+    padding: 0 12px !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+  }
+}
+</style>
+
 </head>
 <body class="min-h-screen flex flex-col antialiased bg-val-dark select-none">
 
@@ -1642,6 +1716,7 @@ header{position:sticky;z-index:50;}
                 sponsorDealsMax: 2,
                 coachOffers: [],
                 coachOfferCooldown: 0,
+                coachContractEndYear: 2028,
                 coachJobSecurity: 70,
                 coachCareerMoves: 0,
                 internationalMatchesPlayed: 0,
@@ -2162,11 +2237,19 @@ header{position:sticky;z-index:50;}
             if (!state || state.bankrupt) return false;
             if (!Array.isArray(state.coachOffers)) state.coachOffers = [];
             if (state.coachOffers.length >= 2) return false;
+
+            // 감독 이적제의는 계약 만료가 가까워졌을 때만 발생한다.
+            // 기본 계약은 2년이며, 계약 만료 직전 시즌의 후반부(17~19주)에만 제의가 올 수 있다.
+            const contractEndYear = Number(state.coachContractEndYear || (state.year + 2));
+            const finalSeason = state.year >= contractEndYear - 1;
+            const nearEndOfSeason = state.week >= 17 && state.week <= 19;
+            if (!force && (!finalSeason || !nearEndOfSeason)) return false;
+
             if (state.coachOfferCooldown > 0 && !force) { state.coachOfferCooldown--; return false; }
             const { games, winRate, top4 } = coachOfferStrength();
             if (games < 4 && !force) return false;
             const quality = (winRate - 0.5) * 100 + (top4 ? 18 : 0) + (state.reputation - 50) * 0.12;
-            const chance = Math.max(0.06, Math.min(0.50, 0.10 + quality * 0.012));
+            const chance = Math.max(0.12, Math.min(0.45, 0.18 + quality * 0.010));
             if (!force && Math.random() > chance) return false;
             const candidates = getAllCareerTeams();
             if (!candidates.length) return false;
@@ -2215,13 +2298,13 @@ header{position:sticky;z-index:50;}
             const oldTeam=state.myTeamName; state.myTeamName=target.name; state.myTeamColor=target.color||'bg-val-red text-white'; state.regionKey=target.regionKey; state.regionName=target.regionName; state.tier=target.tier;
             const regData=VCT_DATA[target.regionKey];
             if(regData){ state.t1Teams=regData.t1.map(t=>({name:t.name,color:t.color,power:t.power,w:0,l:0})); state.t2Teams=regData.t2.map(t=>({name:t.name,color:t.color,power:t.power,academy:!!t.academy,w:0,l:0})); }
-            state.players=createCoachMoveRoster(target); state.maxRoster=6; state.startersRequired=5; state.cash=Math.max(state.cash,forced?300000:450000); state.coachCareerMoves=(state.coachCareerMoves||0)+1; state.coachJobSecurity=70; state.coachOffers=[];
+            state.players=createCoachMoveRoster(target); state.maxRoster=6; state.startersRequired=5; state.cash=Math.max(state.cash,forced?300000:450000); state.coachCareerMoves=(state.coachCareerMoves||0)+1; state.coachJobSecurity=70; state.coachOffers=[]; state.coachContractEndYear=state.year + (forced ? 1 : 2);
             state.logs.push(`${forced?'🚨 [강제 감독 이적]':'✈️ [감독 이적]'} ${oldTeam} → ${target.name} (${target.regionName})`);
         }
         function acceptCoachOffer(id) {
             const idx=(state.coachOffers||[]).findIndex(o=>o.id===id); if(idx<0)return; const offer=state.coachOffers[idx];
             const target=getAllCareerTeams().find(t=>t.name===offer.teamName&&t.regionKey===offer.regionKey); if(!target){showToast('해당 구단 정보를 찾을 수 없습니다.');return;}
-            moveCoachToTeam(target,false); state.cash+=offer.salary; state.reputation=Math.min(100,state.reputation+4); closeModal();
+            moveCoachToTeam(target,false); state.cash+=offer.salary; state.reputation=Math.min(100,state.reputation+4); state.coachContractEndYear=state.year + offer.years; closeModal();
             openModal(`<div class="text-center flex flex-col gap-4"><div class="text-5xl">✈️</div><h2 class="text-2xl font-black text-white">감독 이적 완료</h2><p class="text-sm text-val-muted">${target.name}의 새 감독으로 부임했습니다.<br>계약 보너스 <b class="text-green-400">+${formatMoney(offer.salary)}</b>가 지급되었습니다.</p><button class="bg-val-red text-white font-black py-3 rounded-lg" onclick="closeModal();renderApp()">새 구단에서 시작</button></div>`);
         }
         function evaluateCoachJobSecurity() {
@@ -3401,7 +3484,7 @@ header{position:sticky;z-index:50;}
                 intlPrepareNextPlayerMatch(true); renderApp(); return;
             }
 
-            if (state.week >= 4 && state.week <= 18) maybeGenerateCoachOffer(false);
+            if (state.week >= 17 && state.week <= 19) maybeGenerateCoachOffer(false);
             advanceWeek(true);
         }
 
@@ -3420,7 +3503,10 @@ header{position:sticky;z-index:50;}
                     return;
                 } else {
                     if (evaluateCoachJobSecurity()) {
-                        state.year++; state.week = 1; state.trainingDone = false; state.sponsorDealsUsed = 0; state.sponsorDealsMax = 2; renderApp(); return;
+                        state.year++; state.week = 1; state.trainingDone = false; state.sponsorDealsUsed = 0; state.sponsorDealsMax = 2;
+                    // 계약이 끝났는데 새 제의를 받지 못했다면 1년 단위 재계약 상태로 유지한다.
+                    if (!state.coachContractEndYear || state.coachContractEndYear <= state.year) state.coachContractEndYear = state.year + 1;
+                    renderApp(); return;
                     }
                     const wasPromoted = state.pendingPromotion && state.tier === 2;
                     state.year++;
@@ -3580,7 +3666,7 @@ header{position:sticky;z-index:50;}
                 state.logs.push(`⏳ ${state.year}년 ${state.week}주차 (${newPhase.name})가 시작되었습니다.`);
             }
 
-            if (!fromMatch && state.week >= 4 && state.week <= 18) maybeGenerateCoachOffer(false);
+            if (!fromMatch && state.week >= 17 && state.week <= 19) maybeGenerateCoachOffer(false);
             renderApp();
         }
 
