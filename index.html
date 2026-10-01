@@ -633,12 +633,37 @@ header{position:sticky;z-index:50;}
   header > div {
     display: grid !important;
     grid-template-columns: minmax(0,1fr) auto !important;
-    grid-template-rows: auto 44px !important;
+    grid-template-rows: auto 40px 44px !important;
     width: 100% !important;
     max-width: none !important;
     gap: 6px 8px !important;
     flex-wrap: initial !important;
     align-items: center !important;
+  }
+
+  /* 저장/불러오기/새 게임 영역은 화면 전체 폭을 사용해
+     왼쪽 버튼이 잘리지 않도록 함 */
+  .save-controls {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    justify-self: stretch !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    overflow: hidden !important;
+  }
+  .save-controls .save-btn {
+    flex: 0 0 auto !important;
+  }
+  .save-controls #season-info {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
   }
   header > div > div:first-child {
     min-width: 0 !important;
@@ -662,7 +687,7 @@ header{position:sticky;z-index:50;}
   }
   #global-nav {
     grid-column: 1 / -1 !important;
-    grid-row: 2 !important;
+    grid-row: 3 !important;
     order: initial !important;
     flex-basis: auto !important;
     width: 100% !important;
@@ -855,6 +880,34 @@ header{position:sticky;z-index:50;}
 }
 </style>
 
+<style id="career-cancel-button-style">
+/* 디비전 선택 모달의 취소 버튼: 흰 배경에 흰 글자가 되지 않도록 명확한 대비 적용 */
+.career-cancel-btn{
+    width:100%;
+    min-height:46px;
+    margin-top:2px;
+    padding:10px 14px;
+    border:1px solid #3b4d63;
+    border-radius:10px;
+    background:#26364a;
+    color:#ffffff;
+    font-size:13px;
+    font-weight:900;
+    cursor:pointer;
+    transition:background .18s,border-color .18s,transform .12s;
+}
+.career-cancel-btn:hover{background:#30465e;border-color:#62758d}
+.career-cancel-btn:active{transform:translateY(1px)}
+@media(max-width:700px){
+    .career-cancel-btn{min-height:50px;font-size:14px}
+}
+</style>
+
+<style id="save-system-style">
+.save-controls{min-width:0}.save-btn{border:1px solid rgba(255,255,255,.14);background:#182331;color:#fff;border-radius:8px;padding:7px 9px;font-size:11px;font-weight:800;white-space:nowrap}.save-btn:hover{background:#253346;border-color:rgba(255,70,85,.5)}
+@media(max-width:900px){.save-controls{gap:4px}.save-btn{padding:6px 7px;font-size:10px}.save-controls #season-info{max-width:31vw}}
+@media(max-width:650px){.save-btn{font-size:0;padding:7px 8px}.save-btn:first-child,.save-btn:nth-child(2),.save-btn:nth-child(3){font-size:16px}.save-controls #season-info{max-width:38vw}}
+</style>
 </head>
 <body class="min-h-screen flex flex-col antialiased bg-val-dark select-none">
 
@@ -868,11 +921,17 @@ header{position:sticky;z-index:50;}
                 </div>
             </div>
             <nav id="global-nav"></nav>
-            <div id="season-info" class="text-sm font-bold px-3 py-1.5 rounded-lg border">시즌을 시작하세요</div>
+            <div class="save-controls flex items-center gap-1.5 flex-shrink-0">
+                <button onclick="saveGameFile()" class="save-btn" title="세이브 파일 저장">💾 저장</button>
+                <button onclick="document.getElementById('save-file-input').click()" class="save-btn" title="세이브 파일 불러오기">📂 불러오기</button>
+                <button onclick="startNewGame()" class="save-btn new-game-btn" title="새로운 커리어 시작">🆕 새 게임</button>
+                <div id="season-info" class="text-sm font-bold px-3 py-1.5 rounded-lg border">시즌을 시작하세요</div>
+            </div>
         </div>
     </header>
 
     <noscript><div style="padding:24px;text-align:center;color:white;background:#171e27;margin:20px;border:1px solid #ff4655;border-radius:12px">이 게임은 JavaScript가 필요합니다. 파일 앱 미리보기 대신 Safari에서 HTML 파일을 열어주세요.</div></noscript><div id="app" class="flex-grow w-full max-w-7xl mx-auto p-4 md:p-6"></div>
+    <input id="save-file-input" type="file" accept=".json,application/json" class="hidden" onchange="loadGameFile(event)">
 
     <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-val-red text-white px-6 py-3 rounded-lg font-bold shadow-2xl hidden z-50 transition-all flex items-center gap-2 border border-white/20">
         ℹ️ <span id="toast-msg"></span>
@@ -1632,10 +1691,84 @@ header{position:sticky;z-index:50;}
             { id: "Flex", name: "Flex", icon: "🔄", color: "text-green-400", agents: ["Jett", "Omen", "Sova", "Cypher", "KAY/O"] }
         ];
 
-        const INITIAL_NAMES = ["stax", "buzz", "t3xture", "Meteor", "Karon", "Foxy9", "f0rsakeN", "something", "mindfreak", "d4v41", "kaajak", "Chronicle", "Alfajer", "Boaster", "Hiro", "aspas", "N4RRATE", "zekken", "johnqt", "bang", "ZmjjKK", "nobody", "Smoggy", "CHICHOO", "S1Mon", "Riens", "Wo0t", "Primmie", "OXY", "zander"];
+        const INITIAL_NAMES = ["stax", "Efina", "Zellsis", "Ethan", "BeYN", "MaKo", "Rb", "Francis", "johnqt", "Boaster", "zander", "Munchkin", "buzz", "t3xture", "Meteor", "Karon", "Foxy9", "f0rsakeN", "something", "mindfreak", "d4v41", "kaajak", "Chronicle", "Alfajer", "Boaster", "Hiro", "aspas", "N4RRATE", "zekken", "johnqt", "bang", "ZmjjKK", "nobody", "Smoggy", "CHICHOO", "S1Mon", "Riens", "Wo0t", "Primmie", "OXY", "zander"];
 
         let state = null;
         let currentPage = "dashboard";
+
+        const SAVE_SCHEMA_VERSION = 1;
+        const LOCAL_SAVE_KEY = 'valorant_manager_2026_autosave_v1';
+
+        function getSavePayload() {
+            return { schemaVersion: SAVE_SCHEMA_VERSION, game: 'VALORANT Manager 2026', savedAt: new Date().toISOString(), currentPage, state };
+        }
+
+        function saveGameLocal() {
+            if (!state) return false;
+            try { localStorage.setItem(LOCAL_SAVE_KEY, JSON.stringify(getSavePayload())); return true; } catch (e) { return false; }
+        }
+
+        function saveGameFile() {
+            if (!state) { showToast('먼저 커리어를 시작해줘.'); return; }
+            try {
+                const blob = new Blob([JSON.stringify(getSavePayload(), null, 2)], {type:'application/json;charset=utf-8'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const team = String(state.myTeamName || 'Career').replace(/[^\w가-힣-]+/g, '_');
+                a.href = url; a.download = `VALORANT_Manager_2026_${team}_${state.year || 2026}_Save.json`;
+                document.body.appendChild(a); a.click(); a.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                saveGameLocal();
+                showToast('세이브 파일을 저장했어!');
+            } catch (e) { showToast('세이브 파일 저장에 실패했어.'); }
+        }
+
+        function loadGameFile(event) {
+            const file = event?.target?.files?.[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const payload = JSON.parse(reader.result);
+                    const loaded = payload?.state || payload;
+                    if (!loaded || typeof loaded !== 'object' || !loaded.myTeamName || !Array.isArray(loaded.players)) throw new Error('invalid');
+                    state = loaded; currentPage = payload?.currentPage || 'dashboard'; saveGameLocal(); renderApp(); showToast('세이브 파일을 불러왔어!');
+                } catch (e) { showToast('올바른 VALORANT Manager 세이브 파일이 아니야.'); }
+                finally { event.target.value = ''; }
+            };
+            reader.onerror = () => { event.target.value = ''; showToast('세이브 파일을 읽지 못했어.'); };
+            reader.readAsText(file);
+        }
+
+        function loadAutoSave() {
+            try {
+                const raw = localStorage.getItem(LOCAL_SAVE_KEY); if (!raw) return false;
+                const payload = JSON.parse(raw); const loaded = payload?.state;
+                if (!loaded || typeof loaded !== 'object' || !loaded.myTeamName || !Array.isArray(loaded.players)) return false;
+                state = loaded; currentPage = payload.currentPage || 'dashboard'; return true;
+            } catch (e) { return false; }
+        }
+
+        // 현재 커리어를 종료하고 처음부터 새로운 커리어를 시작한다.
+        // 외부 JSON 세이브 파일은 삭제하지 않으며, 새 게임 확인 후 자동저장만 초기화한다.
+        function startNewGame() {
+            if (state) {
+                const teamName = state.myTeamName || '현재 구단';
+                const confirmed = confirm(
+                    `${teamName}의 현재 커리어를 종료하고 새 게임을 시작할까요?\n\n` +
+                    `현재 커리어의 자동저장은 삭제됩니다.\n` +
+                    `이미 저장한 JSON 세이브 파일은 그대로 남아 있습니다.`
+                );
+                if (!confirmed) return;
+            }
+
+            try { localStorage.removeItem(LOCAL_SAVE_KEY); } catch (e) {}
+            state = null;
+            currentPage = 'dashboard';
+            window.pendingCareer = null;
+            closeModal();
+            renderApp();
+            showToast('새 게임을 시작합니다. 새로운 구단을 선택해줘!');
+        }
 
         let toastTimer = null;
         function showToast(msg) {
@@ -1721,30 +1854,302 @@ header{position:sticky;z-index:50;}
                 if (week === 20) return { name: "오프시즌 (Off-Season 이적시장)", type: "offseason", desc: "차기 시즌 대비 선수 영입 및 로스터 재정비 기간" };
                 return { name: "시즌 종료", type: "end", desc: "시즌 마감" };
             }
+            // VCT 시즌 진행 순서: Kickoff → Masters 1 → Stage 1 → Masters 2 → Stage 2 → Champions
+            // 게임의 20주 시즌에 맞춰 국제대회 사이에 정규 스테이지를 배치합니다.
             if (week <= 2) return { name: "킥오프 (Kickoff 토너먼트)", type: "kickoff", desc: "시즌 개막 토너먼트" };
-            if (week <= 9) return { name: "스테이지 1 (Stage 1 정규리그)", type: "stage1", desc: "8팀 단일 라운드 로빈 — 팀당 7경기" };
-            if (week === 10) return { name: "VALORANT Masters 1 (국제대회)", type: "masters1", desc: "Stage 1 상위권 팀이 진출하는 첫 번째 글로벌 마스터즈" };
-            if (week === 11) return { name: "VALORANT Masters 2 (국제대회)", type: "masters2", desc: "두 번째 글로벌 마스터즈" };
+            if (week === 3) return { name: "VALORANT Masters 1 (국제대회)", type: "masters1", desc: "Kickoff 이후 열리는 첫 번째 글로벌 마스터즈" };
+            if (week <= 9) return { name: "스테이지 1 (Stage 1 정규리그)", type: "stage1", desc: "Masters 1 이후 진행되는 정규리그" };
+            if (week === 10) return { name: "VALORANT Masters 2 (국제대회)", type: "masters2", desc: "Stage 1 이후 열리는 두 번째 글로벌 마스터즈" };
             if (week <= 18) return { name: "스테이지 2 (Stage 2 정규리그)", type: "stage2", desc: "Masters 2 이후, Champions 직전까지 진행되는 정규리그" };
             if (week === 19) return { name: "VALORANT Champions (최종 챔피언십)", type: "champions", desc: "Stage 2 이후 열리는 최종 세계 챔피언십" };
             if (week === 20) return { name: "오프시즌 (Off-Season 이적시장)", type: "offseason", desc: "차기 시즌 대비 선수 영입 및 로스터 재정비 기간" };
             return { name: "시즌 종료", type: "end", desc: "시즌 마감" };
         }
 
+        const ROLE_KO = { Duelist: "듀얼리스트", Initiator: "이니시에이터", Controller: "컨트롤러", Sentinel: "센티넬", Flex: "플렉스" };
+
         function getRoleConfig(roleId) {
             return ROLES.find(r => r.id === roleId) || ROLES.find(r => r.id === "Flex");
         }
 
+        // 실제 프로 선수 이름이 FA 시장에 등장할 때는 선수의 실제 주 포지션을 우선 사용합니다.
+        // 기존에는 FA 생성 순서에 따라 Jett/Fade/Omen/Chamber 등이 배정되면서
+        // Karon 같은 Controller가 Duelist로 표시되는 문제가 있었습니다.
+        const PLAYER_ROLE_OVERRIDES = {
+            stax: "Initiator",
+            buzz: "Duelist",
+            t3xture: "Duelist",
+            Meteor: "Sentinel",
+            Karon: "Controller",
+            Foxy9: "Duelist",
+            f0rsakeN: "Flex",
+            something: "Duelist",
+            mindfreak: "Controller",
+            d4v41: "Flex",
+            kaajak: "Duelist",
+            Chronicle: "Sentinel",
+            Alfajer: "Sentinel",
+            Boaster: "Controller",
+            Hiro: "Initiator",
+            aspas: "Duelist",
+            N4RRATE: "Initiator",
+            zekken: "Duelist",
+            johnqt: "Sentinel",
+            bang: "Controller",
+            ZmjjKK: "Duelist",
+            nobody: "Sentinel",
+            Smoggy: "Controller",
+            CHICHOO: "Controller",
+            S1Mon: "Initiator",
+            Riens: "Initiator",
+            Wo0t: "Duelist",
+            Primmie: "Duelist",
+            OXY: "Duelist",
+            zander: "Controller"
+        };
+
+        const PLAYER_AGENT_OVERRIDES = {
+            Karon: "Omen",
+            ZmjjKK: "Jett",
+            Wo0t: "Jett",
+            Smoggy: "Astra",
+            CHICHOO: "Viper",
+            stax: "Sova",
+            buzz: "Jett",
+            t3xture: "Jett",
+            Meteor: "Cypher",
+            Foxy9: "Jett",
+            f0rsakeN: "KAY/O",
+            something: "Jett",
+            mindfreak: "Omen",
+            d4v41: "KAY/O",
+            kaajak: "Jett",
+            Chronicle: "Viper",
+            Alfajer: "Cypher",
+            Boaster: "Brimstone",
+            Hiro: "Sova",
+            aspas: "Jett",
+            N4RRATE: "Sova",
+            zekken: "Neon",
+            johnqt: "Cypher",
+            bang: "Omen",
+            nobody: "Killjoy",
+            S1Mon: "Sova",
+            Riens: "Sova",
+            Primmie: "Jett",
+            OXY: "Jett",
+            zander: "Omen"
+        };
+
+        // 실제 프로 경기에서 IGL/콜링 경험이 확인되거나 인게임 리더 역할 수행 능력이 높은 선수의 IGL 능력치입니다.
+        // 100에 가까울수록 콜링, 미드라운드 판단, 팀 운영에 강한 선수로 취급합니다.
+        const PLAYER_IGL_OVERRIDES = {
+            // IGL 능력치는 너무 높은 수치가 몰리지 않도록 70~80대 중심으로 조정
+            stax: 82,
+            Efina: 80,
+            Zellsis: 79,
+            Ethan: 78,
+            BeYN: 80,
+            Beyn: 80,
+            beyn: 80,
+            Beyn: 80,
+            MaKo: 84,
+            Mako: 84,
+            Rb: 79,
+            rb: 79,
+            Francis: 82,
+            johnqt: 83,
+            Boaster: 82,
+            FNS: 88,
+            Valyn: 83,
+            zander: 80,
+            Munchkin: 78,
+            saadhak: 87,
+            ANGE1: 84
+        };
+
+        function getPlayerIGL(name, fallback = 50) {
+            const key = String(name || '').trim();
+            return Number.isFinite(PLAYER_IGL_OVERRIDES[key]) ? PLAYER_IGL_OVERRIDES[key] : fallback;
+        }
+
+        function normalizePlayerRole(player) {
+            if (!player) return "Flex";
+            const name = String(player.name || "");
+            if (PLAYER_ROLE_OVERRIDES[name]) return PLAYER_ROLE_OVERRIDES[name];
+
+            const current = String(player.role || "");
+            if (current === "Flex") return current;
+            const conf = getRoleConfig(current);
+            if (conf && conf.agents.includes(player.agent)) return current;
+
+            const matched = ROLES.find(r => r.id !== "Flex" && r.agents.includes(player.agent));
+            return matched ? matched.id : (current || "Flex");
+        }
+
+        function normalizePlayerProfile(player, index = 0) {
+            if (!player) return player;
+            const fixedRole = normalizePlayerRole(player);
+            player.role = fixedRole;
+            if (typeof player.igl !== 'number') player.igl = getPlayerIGL(player.name, 50);
+            else if (Object.prototype.hasOwnProperty.call(PLAYER_IGL_OVERRIDES, String(player.name || '').trim())) player.igl = getPlayerIGL(player.name, player.igl);
+
+            const fixedAgent = PLAYER_AGENT_OVERRIDES[player.name];
+            if (fixedAgent && getRoleConfig(fixedRole).agents.includes(fixedAgent)) {
+                player.agent = fixedAgent;
+            } else if (!getRoleConfig(fixedRole).agents.includes(player.agent)) {
+                const agents = getRoleConfig(fixedRole).agents || [];
+                if (agents.length) player.agent = agents[index % agents.length];
+            }
+            return player;
+        }
+
+        function roleLabel(roleId) {
+            return ROLE_KO[roleId] || roleId || "플렉스";
+        }
+
         function makeFreeAgent(i, name, roleId, ovr, salary) {
-            const roleObj = getRoleConfig(roleId);
+            const roleObj = getRoleConfig(PLAYER_ROLE_OVERRIDES[name] || roleId);
             const agents = roleObj.agents || [];
+            const preferredAgent = PLAYER_AGENT_OVERRIDES[name];
             return {
                 id: 'fa_' + Math.random().toString(36).substr(2, 9),
-                name, role: roleObj.id,
-                agent: agents[i % agents.length],
+                name,
+                role: roleObj.id,
+                agent: preferredAgent && agents.includes(preferredAgent) ? preferredAgent : agents[i % agents.length],
                 ovr, salary,
+                igl: getPlayerIGL(name, 50),
+                aim: Math.round(ovr * 0.85),
+                trainingXP: 0,
+                individualTrainingDone: false,
                 stats: { matches: 0, kills: 0, deaths: 0, assists: 0, acsSum: 0, mvpCount: 0 }
             };
+        }
+
+        // 2026-10-01 기준 실제 FA 풀.
+        // Riot GCD는 현재 계약/소속 정보를 확인하는 공식 데이터베이스이며,
+        // 공개된 최근 이적 기록에서 실제 FA로 확인되는 선수만 초기 FA 시장에 넣습니다.
+        const CURRENT_REAL_FREE_AGENT_DEFS = [
+            { name: "Boo", role: "Controller", agent: "Omen", ovr: 82, salary: 62000 },
+            { name: "Veqaj", role: "Initiator", agent: "Sova", ovr: 78, salary: 50000 },
+            { name: "Jerrwin", role: "Duelist", agent: "Raze", ovr: 77, salary: 48000 },
+            { name: "Sylvan", role: "Controller", agent: "Omen", ovr: 80, salary: 54000 },
+            { name: "purp0", role: "Controller", agent: "Omen", ovr: 79, salary: 52000 },
+            { name: "bipo", role: "Sentinel", agent: "Cypher", ovr: 76, salary: 45000 }
+        ];
+        const CURRENT_REAL_FREE_AGENT_NAMES = new Set(CURRENT_REAL_FREE_AGENT_DEFS.map(p => p.name.toLowerCase()));
+
+        function createCurrentRealFreeAgents() {
+            return CURRENT_REAL_FREE_AGENT_DEFS.map((p, i) => {
+                const fa = makeFreeAgent('realfa_' + i, p.name, p.role, p.ovr, p.salary);
+                fa.agent = p.agent;
+                fa.marketType = 'fa';
+                fa.sourceTeam = null;
+                fa.realFreeAgent = true;
+                return fa;
+            });
+        }
+
+        // 팀 로스터에 등록된 선수는 FA 이적시장에 중복으로 노출하지 않습니다.
+        // VCT_DATA의 모든 T1/T2 로스터와 현재 유저 로스터를 함께 검사합니다.
+        function getRosteredPlayerNames() {
+            const names = new Set();
+            const addRoster = (roster) => (roster || []).forEach(p => {
+                const n = String(p?.name || '').trim().toLowerCase();
+                if (n) names.add(n);
+            });
+            Object.values(VCT_DATA || {}).forEach(reg => {
+                (reg?.t1 || []).forEach(t => addRoster(t.roster));
+                (reg?.t2 || []).forEach(t => addRoster(t.roster));
+            });
+            (state?.players || []).forEach(p => {
+                const n = String(p?.name || '').trim().toLowerCase();
+                if (n) names.add(n);
+            });
+            return names;
+        }
+
+        function filterFreeAgentsAgainstRosters() {
+            if (!state || !Array.isArray(state.freeAgents)) return;
+            const globalRostered = getRosteredPlayerNames();
+            const myRostered = new Set((state.players || []).map(p => String(p?.name || '').trim().toLowerCase()).filter(Boolean));
+            const seen = new Set();
+            state.freeAgents = state.freeAgents.filter(p => {
+                const n = String(p?.name || '').trim().toLowerCase();
+                if (!n || myRostered.has(n) || seen.has(n)) return false;
+                // 실제 FA는 정적 VCT_DATA에 예전 소속이 남아 있어도 시장에 표시합니다.
+                if (globalRostered.has(n) && !CURRENT_REAL_FREE_AGENT_NAMES.has(n) && p.marketType !== 'transfer') return false;
+                seen.add(n);
+                return true;
+            });
+        }
+
+        function buildOffseasonTransferTargets() {
+            if (!state) return [];
+            const reg = VCT_DATA[state.regionKey];
+            if (!reg) return [];
+            const teams = state.tier === 1 ? (reg.t1 || []) : (reg.t2 || []);
+            const candidates = [];
+            teams.forEach(team => {
+                if (!team || team.name === state.myTeamName) return;
+                (team.roster || []).forEach((p, idx) => {
+                    const n = String(p?.name || '').trim().toLowerCase();
+                    if (!n || CURRENT_REAL_FREE_AGENT_NAMES.has(n)) return;
+                    candidates.push({
+                        id: 'tr_' + Math.random().toString(36).substr(2, 9),
+                        name: p.name, role: p.role, agent: p.agent, ovr: p.ovr, salary: p.salary,
+                        aim: p.aim ?? Math.round((p.ovr || 70) * 0.85),
+                        igl: getPlayerIGL(p.name, p.igl ?? 50),
+                        trainingXP: 0, individualTrainingDone: false,
+                        stats: { matches: 0, kills: 0, deaths: 0, assists: 0, acsSum: 0, mvpCount: 0 },
+                        marketType: 'transfer',
+                        sourceTeam: team.name,
+                        realFreeAgent: false
+                    });
+                });
+            });
+            // 오프시즌에는 너무 많은 선수가 한꺼번에 뜨지 않도록 최대 14명만 표시합니다.
+            return candidates.sort(() => Math.random() - 0.5).slice(0, 14);
+        }
+
+
+        function getFreeAgentNamePool() {
+            const rostered = getRosteredPlayerNames();
+            return INITIAL_NAMES.filter(name => !rostered.has(String(name).trim().toLowerCase()));
+        }
+
+        // 실제 선수 풀이 소진되면 FA_Agent_1 같은 임시 이름 대신 가상의 선수명을 생성합니다.
+        function generateRandomFreeAgentName(existingNames = []) {
+            const a = [
+                'Aero','Arden','Aven','Brix','Cairo','Darin','Eon','Jace','Kairo','Kian',
+                'Lior','Maven','Nero','Nox','Riven','Ryn','Soren','Vero','Veyn','Zane',
+                'Aster','Kaze','Milo','Raku','Vex','Yori','Zeno','Eris','Luca','Tarin'
+            ];
+            const b = ['ix','en','on','ar','is','ex','in','or','yx','el','an','io','um','ae'];
+            const blocked = new Set([
+                ...getRosteredPlayerNames(),
+                ...(existingNames || []).map(n => String(n).trim().toLowerCase()),
+                ...INITIAL_NAMES.map(n => String(n).trim().toLowerCase())
+            ]);
+            for (let tries = 0; tries < 200; tries++) {
+                let name = a[Math.floor(Math.random() * a.length)] + b[Math.floor(Math.random() * b.length)];
+                if (Math.random() < 0.28) name += Math.floor(10 + Math.random() * 90);
+                const key = name.toLowerCase();
+                if (!blocked.has(key) && !/^FA_Agent_\d+$/i.test(name)) return name;
+            }
+            return 'Prospect' + Math.floor(1000 + Math.random() * 9000);
+        }
+
+        function replacePlaceholderFreeAgentNames() {
+            if (!state || !Array.isArray(state.freeAgents)) return;
+            const used = [];
+            state.freeAgents.forEach(p => {
+                const raw = String(p?.name || '').trim();
+                if (/^FA_Agent_\d+$/i.test(raw)) {
+                    p.name = generateRandomFreeAgentName(used);
+                }
+                used.push(p.name);
+            });
         }
 
         const DIFFICULTY_CONFIG = {
@@ -1870,17 +2275,16 @@ header{position:sticky;z-index:50;}
                 ovr: p.ovr,
                 salary: p.salary,
                 isStarter: !(p.isSixth || idx >= 5),
+                aim: p.aim ?? Math.round(p.ovr * 0.85),
+                igl: getPlayerIGL(p.name, p.igl ?? 50),
+                trainingXP: p.trainingXP ?? 0,
+                individualTrainingDone: false,
                 stats: { matches: 0, kills: 0, deaths: 0, assists: 0, acsSum: 0, mvpCount: 0 }
             }));
 
-            let freeAgents = [];
-            let namePool = [...INITIAL_NAMES].sort(() => Math.random() - 0.5);
-            const faRoles = ["Duelist", "Initiator", "Controller", "Sentinel", "Flex", "Duelist", "Initiator", "Controller", "Sentinel", "Flex", "Duelist", "Initiator", "Controller", "Sentinel"];
-            for (let i = 0; i < 14; i++) {
-                const ovr = 68 + Math.floor(Math.random() * 13);
-                const salary = 28000 + Math.floor(Math.random() * 18000);
-                freeAgents.push(makeFreeAgent(i, namePool[i] || `FA_Agent_${i+1}`, faRoles[i], ovr, salary));
-            }
+            // 시즌 중 선수 시장에는 실제 FA만 표시합니다.
+            // 가상/계약 중 선수는 오프시즌에만 transfer market으로 생성됩니다.
+            let freeAgents = createCurrentRealFreeAgents();
 
             const youth = [];
             const youthPool = ["Nova", "Rin", "Milo", "Kite", "Vex", "Ari", "Nox", "Lumi"];
@@ -1907,6 +2311,8 @@ header{position:sticky;z-index:50;}
                 coach: 45,
                 analyst: 40,
                 trainingDone: false,
+                yearWins: 0,
+                yearLosses: 0,
                 tactics: {
                     attack: "balanced",
                     defense: "standard",
@@ -1917,6 +2323,8 @@ header{position:sticky;z-index:50;}
                 maxRoster: 6,
                 startersRequired: 5,
                 freeAgents: freeAgents,
+                scoutCandidates: [],
+                scoutLastWeek: 0,
                 youth: youth,
                 youthLevel: 1,
                 t1Teams: t1Teams,
@@ -1935,6 +2343,7 @@ header{position:sticky;z-index:50;}
                 internationalMatchTarget: 0,
                 internationalPhaseType: null,
                 internationalWins: 0,
+                careerStats: { totalWins: 0, totalLosses: 0, seasons: [] },
                 internationalTournament: null,
                 internationalHistory: [],
                 internationalHistoryView: null,
@@ -2287,6 +2696,7 @@ header{position:sticky;z-index:50;}
                 ["tactics","전술","fa-chess-knight"],
                 ["finance","경영","fa-building-columns"],
                 ["market","선수 시장","fa-store"],
+                ["scout","스카우트","fa-crosshairs"],
                 ["league","대회 일정","fa-calendar-days"],
                 ["international", state?.tier === 2 ? "국제 대회 🔒" : "국제 대회", "fa-globe"],
                 ["world_ranking","세계 순위","fa-chart-line"],
@@ -2310,6 +2720,7 @@ header{position:sticky;z-index:50;}
         }
 
         function renderApp() {
+            if (state) saveGameLocal();
             renderGlobalNav();
             enableGlobalNavWheelScroll();
             const app = document.getElementById("app");
@@ -2661,7 +3072,8 @@ header{position:sticky;z-index:50;}
             const starters = getStartingPlayers();
             const bench = state.players.find(p => p.isStarter === false);
             const playerRows = state.players.map((p, index) => {
-                const rConf = getRoleConfig(p.role);
+                const fixedRole = normalizePlayerRole(p);
+                const rConf = getRoleConfig(fixedRole);
                 const kd = p.stats.deaths > 0 ? (p.stats.kills / p.stats.deaths).toFixed(2) : p.stats.kills;
                 const avgAcs = p.stats.matches > 0 ? Math.round(p.stats.acsSum / p.stats.matches) : 0;
                 const status = p.isStarter === false ? '식스맨' : '선발';
@@ -2676,7 +3088,7 @@ header{position:sticky;z-index:50;}
                         <div>
                             <div class="flex items-center gap-2 flex-wrap">
                                 <span class="font-black text-lg text-white">${p.name}</span>
-                                <span class="text-xs px-2 py-0.5 rounded font-bold bg-val-panel border border-val-border ${rConf.color}">${p.role}</span>
+                                <span class="text-xs px-2 py-0.5 rounded font-bold bg-val-panel border border-val-border ${rConf.color}">${rConf.icon} ${roleLabel(fixedRole)}</span>
                                 <span class="text-xs px-2 py-0.5 rounded font-bold border ${statusClass}">${status}</span>
                             </div>
                             <div class="text-xs text-val-muted mt-0.5">선호 요원: <span class="text-gray-300">${p.agent}</span> · OVR <span class="text-white font-bold">${p.ovr}</span></div>
@@ -2714,9 +3126,16 @@ header{position:sticky;z-index:50;}
         }
 
         function renderMarketView() {
+            // 기존 세이브의 중복 FA와 FA_Agent_x 임시 이름을 화면 진입 시 정리합니다.
+            filterFreeAgentsAgainstRosters();
+            replacePlaceholderFreeAgentNames();
             const isFull = state.players.length >= 6;
+            const isOffseason = getPhaseName(state.week).type === 'offseason';
             const marketRows = state.freeAgents.map((p, index) => {
-                const rConf = getRoleConfig(p.role);
+                // 오래된 세이브까지 포함해 선수 이름 기준 실제 포지션/선호 요원을 바로 보정합니다.
+                normalizePlayerProfile(p, index);
+                const fixedRole = p.role;
+                const rConf = getRoleConfig(fixedRole);
                 const fee = Math.round(p.salary * 0.4);
                 const canAfford = state.cash >= fee;
 
@@ -2724,11 +3143,12 @@ header{position:sticky;z-index:50;}
                 <div class="bg-val-dark p-4 rounded-xl border border-val-border flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div class="flex items-center gap-3">
                         <div>
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-2 flex-wrap">
                                 <span class="font-bold text-lg text-white">${p.name}</span>
                                 <span class="text-xs px-2 py-0.5 rounded font-bold bg-val-panel border border-val-border ${rConf.color}">${p.role}</span>
+                                ${p.marketType === 'transfer' ? '<span class="text-[10px] px-2 py-0.5 rounded font-bold bg-yellow-500/10 text-yellow-300 border border-yellow-500/20">계약 중 · 오프시즌</span>' : '<span class="text-[10px] px-2 py-0.5 rounded font-bold bg-green-500/10 text-green-400 border border-green-500/20">FREE AGENT</span>'}
                             </div>
-                            <div class="text-xs text-val-muted mt-0.5">선호 요원: <span class="text-gray-300">${p.agent}</span></div>
+                            <div class="text-xs text-val-muted mt-0.5">선호 요원: <span class="text-gray-300">${p.agent}</span>${p.sourceTeam ? ` · 현 소속: <span class="text-gray-300">${p.sourceTeam}</span>` : ''}</div>
                         </div>
                     </div>
 
@@ -2753,8 +3173,8 @@ header{position:sticky;z-index:50;}
             return `
                 <div class="bg-val-panel border border-val-border rounded-xl p-5">
                     <div class="border-b border-val-border pb-3 mb-4">
-                        <h2 class="text-lg font-bold text-white">${state.year} FA 이적 시장</h2>
-                        <p class="text-xs text-val-muted mt-1">선발 5명 + 식스맨 1명까지 최대 6명을 보유할 수 있습니다. 계약금은 연봉의 40%입니다.</p>
+                        <h2 class="text-lg font-bold text-white">${state.year} 선수 시장</h2>
+                        <p class="text-xs text-val-muted mt-1">${isOffseason ? '오프시즌: 실제 FA와 다른 팀 소속 선수의 이적 영입이 가능합니다.' : '시즌 중: 실제로 FA 상태인 선수만 영입할 수 있습니다. 팀 소속 선수는 오프시즌에만 영입할 수 있습니다.'} 선발 5명 + 식스맨 1명까지 최대 6명이며 계약금은 연봉의 40%입니다.</p>
                     </div>
                     <div class="flex flex-col gap-3">
                         ${marketRows.length > 0 ? marketRows : '<div class="text-center py-8 text-val-muted text-sm">현재 FA 시장에 선수가 없습니다.</div>'}
@@ -2765,75 +3185,9 @@ header{position:sticky;z-index:50;}
 
         function renderTrainingView() {
             const isTrained = state.trainingDone;
-            const btnStyle = isTrained 
-                ? "bg-gray-800 text-gray-500 border-gray-700 cursor-not-allowed" 
-                : "bg-val-dark hover:bg-val-border text-white border-val-border hover:border-val-red";
-
-            return `
-                <div class="grid md:grid-cols-2 gap-6">
-                    <div class="bg-val-panel border border-val-border rounded-xl p-5 flex flex-col">
-                        <div class="border-b border-val-border pb-3 mb-4 flex justify-between items-center">
-                            <h2 class="text-lg font-bold text-white">팀 전술 & 피지컬 훈련</h2>
-                            <span class="text-xs font-bold ${isTrained ? 'text-val-red' : 'text-green-400'}">
-                                ${isTrained ? '이번 주 훈련 완료' : '훈련 진행 가능'}
-                            </span>
-                        </div>
-                        <p class="text-xs text-val-muted mb-4">매주 1회 팀 전력을 향상시킬 세션을 진행할 수 있습니다.</p>
-
-                        <div class="flex flex-col gap-3 mt-auto">
-                            <button class="p-4 rounded-xl border text-left transition flex items-center justify-between ${btnStyle}" onclick="doTrain('aim')" ${isTrained ? 'disabled' : ''}>
-                                <div>
-                                    <div class="font-bold text-sm">🎯 에임 및 격발 훈련</div>
-                                    <div class="text-xs text-green-400 mt-0.5">선수단 폼 +4 상승</div>
-                                </div>
-                                <i class="fa-solid fa-crosshair text-xl text-val-muted"></i>
-                            </button>
-                            <button class="p-4 rounded-xl border text-left transition flex items-center justify-between ${btnStyle}" onclick="doTrain('tactic')" ${isTrained ? 'disabled' : ''}>
-                                <div>
-                                    <div class="font-bold text-sm">🧠 맵 전술 & 리테이크 워크숍</div>
-                                    <div class="text-xs text-green-400 mt-0.5">폼 +2 및 코칭 레벨 +2 상승</div>
-                                </div>
-                                <i class="fa-solid fa-brain text-xl text-val-muted"></i>
-                            </button>
-                            <button class="p-4 rounded-xl border text-left transition flex items-center justify-between ${btnStyle}" onclick="doTrain('team')" ${isTrained ? 'disabled' : ''}>
-                                <div>
-                                    <div class="font-bold text-sm">🤝 팀 케미스트리 워크숍</div>
-                                    <div class="text-xs text-green-400 mt-0.5">선수단 사기 +6 상승</div>
-                                </div>
-                                <i class="fa-solid fa-people-group text-xl text-val-muted"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="bg-val-panel border border-val-border rounded-xl p-5 flex flex-col">
-                        <div class="border-b border-val-border pb-3 mb-4">
-                            <h2 class="text-lg font-bold text-white">스태프 & 분석 시스템</h2>
-                        </div>
-                        
-                        <div class="grid grid-cols-2 gap-3 mb-4">
-                            <div class="bg-val-dark p-3.5 rounded-lg border border-val-border text-center">
-                                <div class="text-xs text-val-muted">코치진 능력</div>
-                                <div class="text-2xl font-black text-val-accent mt-1">Lv.${state.coach}</div>
-                            </div>
-                            <div class="bg-val-dark p-3.5 rounded-lg border border-val-border text-center">
-                                <div class="text-xs text-val-muted">데이터 분석력</div>
-                                <div class="text-2xl font-black text-val-accent mt-1">Lv.${state.analyst}</div>
-                            </div>
-                        </div>
-
-                        <div class="flex flex-col gap-3 mt-auto">
-                            <button class="bg-val-card hover:bg-val-border border border-val-border p-3.5 rounded-xl font-bold text-sm text-left flex justify-between items-center transition" onclick="upgradeStaff('coach')">
-                                <span>👨‍🏫 전력 코치 연수 세션</span>
-                                <span class="text-green-400 font-bold">$55,000</span>
-                            </button>
-                            <button class="bg-val-card hover:bg-val-border border border-val-border p-3.5 rounded-xl font-bold text-sm text-left flex justify-between items-center transition" onclick="upgradeStaff('analyst')">
-                                <span>💻 경기 분석 AI 소프트웨어 도입</span>
-                                <span class="text-green-400 font-bold">$40,000</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
+            const btnStyle = isTrained ? "bg-gray-800 text-gray-500 border-gray-700 cursor-not-allowed" : "bg-val-dark hover:bg-val-border text-white border-val-border hover:border-val-red";
+            const rows=(state.players||[]).map((p,i)=>{ ensureIndividualTrainingState(p); const d=p.individualTrainingDone; const dis=d?'disabled':''; return `<div class="${d?'bg-gray-900/60 border-gray-700':'bg-val-dark border-val-border'} border rounded-xl p-4"><div class="flex flex-col md:flex-row md:items-center justify-between gap-3"><div><div class="flex items-center gap-2"><b class="text-white">${p.name}</b><span class="text-[10px] px-2 py-0.5 rounded bg-val-panel border border-val-border text-val-muted">${p.role}</span>${d?'<span class="text-[10px] text-green-400 font-bold">✓ 완료</span>':''}</div><div class="grid grid-cols-3 gap-2 mt-2 text-[10px]"><div class="bg-val-panel rounded px-2 py-1 text-white">OVR <b>${p.ovr}</b></div><div class="bg-val-panel rounded px-2 py-1 text-cyan-300">에임 <b>${p.aim}</b></div><div class="bg-val-panel rounded px-2 py-1 text-purple-300">IGL <b>${p.igl}</b></div></div></div><div class="grid grid-cols-2 sm:grid-cols-4 gap-2"><button ${dis} onclick="trainIndividual(${i},'rank')" class="p-2 rounded-lg border ${d?'opacity-50 cursor-not-allowed border-gray-700':'border-red-500/30 hover:bg-red-500/10'}"><b class="text-xs text-white">🏆 랭킹 1등 도전</b><div class="text-[9px] text-val-muted">OVR 성장</div></button><button ${dis} onclick="trainIndividual(${i},'igl')" class="p-2 rounded-lg border ${d?'opacity-50 cursor-not-allowed border-gray-700':'border-purple-500/30 hover:bg-purple-500/10'}"><b class="text-xs text-white">🧠 IGL 연습</b><div class="text-[9px] text-val-muted">IGL 상승</div></button><button ${dis} onclick="trainIndividual(${i},'aim')" class="p-2 rounded-lg border ${d?'opacity-50 cursor-not-allowed border-gray-700':'border-cyan-500/30 hover:bg-cyan-500/10'}"><b class="text-xs text-white">🎯 에임 연습</b><div class="text-[9px] text-val-muted">에임 상승</div></button><button ${dis} onclick="trainIndividual(${i},'utility')" class="p-2 rounded-lg border ${d?'opacity-50 cursor-not-allowed border-gray-700':'border-green-500/30 hover:bg-green-500/10'}"><b class="text-xs text-white">🛠️ 유틸/전술</b><div class="text-[9px] text-val-muted">전술 성장</div></button></div></div></div>`}).join('');
+            return `<div class="flex flex-col gap-6"><div class="grid lg:grid-cols-2 gap-6"><div class="bg-val-panel border border-val-border rounded-xl p-5"><div class="border-b border-val-border pb-3 mb-4 flex justify-between"><h2 class="text-lg font-bold text-white">👥 팀 훈련</h2><span class="text-xs font-bold ${isTrained?'text-val-red':'text-green-400'}">${isTrained?'이번 주 완료':'진행 가능'}</span></div><p class="text-xs text-val-muted mb-4">팀 전체 훈련은 주 1회 선택할 수 있습니다.</p><div class="flex flex-col gap-3"><button class="p-4 rounded-xl border text-left ${btnStyle}" onclick="doTrain('aim')" ${isTrained?'disabled':''}><b>🎯 팀 에임 및 격발</b><div class="text-xs text-green-400 mt-1">폼 +4</div></button><button class="p-4 rounded-xl border text-left ${btnStyle}" onclick="doTrain('tactic')" ${isTrained?'disabled':''}><b>🧠 팀 전술 & 리테이크</b><div class="text-xs text-green-400 mt-1">폼 +2 · 코칭 +2</div></button><button class="p-4 rounded-xl border text-left ${btnStyle}" onclick="doTrain('team')" ${isTrained?'disabled':''}><b>🤝 팀 케미스트리</b><div class="text-xs text-green-400 mt-1">사기 +6</div></button></div></div><div class="bg-val-panel border border-val-border rounded-xl p-5"><div class="border-b border-val-border pb-3 mb-4"><h2 class="text-lg font-bold text-white">👤 개인 훈련</h2><p class="text-xs text-val-muted mt-1">선수마다 주 1회씩 서로 다른 훈련을 선택할 수 있습니다.</p></div><div class="flex flex-col gap-3">${rows}</div></div></div><div class="bg-val-panel border border-val-border rounded-xl p-5"><h2 class="text-lg font-bold text-white">스태프 & 분석 시스템</h2><div class="grid grid-cols-2 gap-3 mt-4"><div class="bg-val-dark p-3 rounded-lg border border-val-border text-center"><div class="text-xs text-val-muted">코치진 능력</div><div class="text-2xl font-black text-val-accent">Lv.${state.coach}</div></div><div class="bg-val-dark p-3 rounded-lg border border-val-border text-center"><div class="text-xs text-val-muted">데이터 분석력</div><div class="text-2xl font-black text-val-accent">Lv.${state.analyst}</div></div></div><div class="grid md:grid-cols-2 gap-3 mt-4"><button class="bg-val-card border border-val-border p-3 rounded-xl font-bold text-sm flex justify-between" onclick="upgradeStaff('coach')"><span>👨‍🏫 전력 코치 연수</span><span class="text-green-400">$55,000</span></button><button class="bg-val-card border border-val-border p-3 rounded-xl font-bold text-sm flex justify-between" onclick="upgradeStaff('analyst')"><span>📊 분석 시스템 업그레이드</span><span class="text-green-400">$40,000</span></button></div></div></div>`;
         }
 
         function renderFinanceView() {
@@ -3087,11 +3441,262 @@ header{position:sticky;z-index:50;}
             </div>`;
         }
 
+
+        /* ===== 지역 서버 랭킹 기반 스카우트 =====
+           실제 게임 서버의 실시간 랭킹을 외부에서 가져오는 기능이 아니라,
+           현재 커리어 지역에 대응하는 지역 서버 랭킹 풀을 게임 내부에서 생성합니다.
+           순위가 높을수록 높은 OVR/잠재력을 가진 선수가 등장합니다.
+        */
+        const SCOUT_SERVER_MAP = {
+            pacific: { name: "퍼시픽 지역 서버", detail: "서울 · 도쿄 · 싱가포르권" },
+            americas: { name: "아메리카 지역 서버", detail: "NA · BR · LATAM권" },
+            emea: { name: "EMEA 지역 서버", detail: "EU · TR · MENA권" },
+            china: { name: "중국 지역 서버", detail: "중국 서버" }
+        };
+
+        const SCOUT_RANK_TIERS = [
+            { min: 1, max: 100, name: "Radiant", color: "text-yellow-300", base: 88 },
+            { min: 101, max: 500, name: "Immortal 3", color: "text-red-400", base: 84 },
+            { min: 501, max: 1500, name: "Immortal 2", color: "text-red-400", base: 81 },
+            { min: 1501, max: 3500, name: "Immortal 1", color: "text-red-400", base: 77 },
+            { min: 3501, max: 8000, name: "Ascendant 3", color: "text-green-400", base: 73 },
+            { min: 8001, max: 16000, name: "Ascendant 2", color: "text-green-400", base: 70 },
+            { min: 16001, max: 30000, name: "Ascendant 1", color: "text-green-400", base: 67 }
+        ];
+
+        const SCOUT_NAME_A = ["Nova","Rin","Milo","Kite","Vex","Ari","Nox","Lumi","Juno","Rex","Kai","Zio","Mira","Sora","Navi","Kiro","Eli","Ryo","Zen","Mako","Taro","Yuki","Rinzo","Aven","Cruz","Lynx","Echo","Vale","Nyx","Orin"];
+        const SCOUT_NAME_B = ["K","V","X","Z","R","N","Q","J","M","T","S","F","D","H","L","W","Y","P"];
+
+        function scoutServerInfo() {
+            return SCOUT_SERVER_MAP[state?.regionKey] || { name: "지역 서버", detail: "현재 커리어 지역" };
+        }
+
+        function scoutRankTier(rank) {
+            return SCOUT_RANK_TIERS.find(t => rank >= t.min && rank <= t.max) || SCOUT_RANK_TIERS[SCOUT_RANK_TIERS.length - 1];
+        }
+
+        function generateScoutName(used = new Set()) {
+            for (let i = 0; i < 80; i++) {
+                const a = SCOUT_NAME_A[Math.floor(Math.random() * SCOUT_NAME_A.length)];
+                const b = SCOUT_NAME_B[Math.floor(Math.random() * SCOUT_NAME_B.length)];
+                const n = Math.random() < .55
+                    ? `${a}${Math.floor(1 + Math.random() * 99)}`
+                    : `${a}${b}${Math.floor(1 + Math.random() * 99)}`;
+                if (!used.has(n.toLowerCase())) return n;
+            }
+            return `Scout${Math.floor(100 + Math.random() * 900)}`;
+        }
+
+        function scoutRankToOvr(rank, tier) {
+            const rankProgress = Math.max(0, Math.min(1, (tier.max - rank) / Math.max(1, tier.max - tier.min)));
+            const variance = Math.floor(Math.random() * 5) - 2;
+            return Math.max(64, Math.min(97, Math.round(tier.base + rankProgress * 5 + variance)));
+        }
+
+        function scoutSalaryFromOvr(ovr, rank) {
+            return Math.round((22000 + ovr * 520 + Math.max(0, 12000 - Math.min(rank, 12000) * 0.25)) / 100) * 100;
+        }
+
+        function scoutOnePlayer(index, roleFilter = "all", rankLimit = 16000) {
+            const used = new Set([
+                ...(state.players || []).map(p => String(p.name || "").toLowerCase()),
+                ...(state.freeAgents || []).map(p => String(p.name || "").toLowerCase()),
+                ...(state.scoutCandidates || []).map(p => String(p.name || "").toLowerCase())
+            ]);
+
+            let role = roleFilter;
+            if (role === "all") {
+                role = ROLES[Math.floor(Math.random() * ROLES.length)].id;
+            }
+
+            const maxRank = Math.max(100, Math.min(30000, Number(rankLimit) || 16000));
+            const minRank = Math.max(1, Math.floor(Math.random() * Math.min(5000, maxRank)) + 1);
+            const rank = Math.random() < .35
+                ? Math.floor(1 + Math.random() * Math.min(1000, maxRank))
+                : Math.floor(minRank + Math.random() * Math.max(1, maxRank - minRank));
+            const tier = scoutRankTier(rank);
+            const ovr = scoutRankToOvr(rank, tier);
+            const roleObj = getRoleConfig(role);
+            const agent = roleObj.agents[Math.floor(Math.random() * roleObj.agents.length)];
+            const name = generateScoutName(used);
+
+            return {
+                id: "sc_" + Math.random().toString(36).slice(2, 11),
+                name,
+                role: roleObj.id,
+                agent,
+                ovr,
+                salary: scoutSalaryFromOvr(ovr, rank),
+                server: scoutServerInfo().name,
+                rank,
+                rankTier: tier.name,
+                age: 17 + Math.floor(Math.random() * 8),
+                potential: Math.min(99, ovr + 4 + Math.floor(Math.random() * 9)),
+                scoutedAtYear: state.year,
+                scoutedAtWeek: state.week,
+                stats: { matches: 0, kills: 0, deaths: 0, assists: 0, acsSum: 0, mvpCount: 0 }
+            };
+        }
+
+        function scoutPlayers() {
+            if (!careerActionAllowed()) return;
+            if (!state) return;
+
+            const role = document.getElementById("scout-role-filter")?.value || "all";
+            const rankLimit = Number(document.getElementById("scout-rank-limit")?.value || 16000);
+            const cost = rankLimit <= 500 ? 12000 : rankLimit <= 1500 ? 9000 : rankLimit <= 3500 ? 7000 : 5000;
+
+            if (state.cash < cost) {
+                showToast(`스카우트 비용 ${formatMoney(cost)}가 필요합니다.`);
+                return;
+            }
+
+            state.cash -= cost;
+            const candidates = [];
+            for (let i = 0; i < 8; i++) {
+                candidates.push(scoutOnePlayer(i, role, rankLimit));
+            }
+
+            // 기존 후보는 새 탐색 결과로 교체하되, 이미 영입된 선수와 중복되지 않도록 정리한다.
+            state.scoutCandidates = candidates;
+            state.scoutLastWeek = state.week;
+            state.logs.push(`🔎 [스카우트] ${scoutServerInfo().name} 랭킹 기준 ${candidates.length}명의 선수를 발견했습니다.`);
+            showToast(`${scoutServerInfo().name}에서 ${candidates.length}명 발견!`);
+            renderApp();
+        }
+
+        function recruitScoutedPlayer(index) {
+            if (!careerActionAllowed()) return;
+            if (!state || !Array.isArray(state.scoutCandidates)) return;
+            if (state.players.length >= 6) {
+                showToast("로스터가 가득 찼습니다. 먼저 선수를 방출하세요.");
+                return;
+            }
+
+            const p = state.scoutCandidates[index];
+            if (!p) return;
+            const fee = Math.round((p.salary || 0) * 0.4);
+
+            if (state.cash < fee) {
+                showToast(`계약금 ${formatMoney(fee)}가 부족합니다.`);
+                return;
+            }
+
+            normalizePlayerProfile(p, index);
+            p.isStarter = state.players.length < 5;
+            p.scouted = true;
+            p.stats = p.stats || { matches: 0, kills: 0, deaths: 0, assists: 0, acsSum: 0, mvpCount: 0 };
+
+            state.cash -= fee;
+            if (checkBankruptcy()) { renderApp(); return; }
+
+            state.players.push(p);
+            state.scoutCandidates.splice(index, 1);
+            filterFreeAgentsAgainstRosters();
+            state.logs.push(`🎯 [스카우트 영입] ${p.name} (${p.server} #${p.rank.toLocaleString()}) 영입 완료.`);
+            showToast(`${p.name} 영입 성공!`);
+            renderApp();
+        }
+
+        function dismissScoutCandidate(index) {
+            if (!state?.scoutCandidates) return;
+            state.scoutCandidates.splice(index, 1);
+            renderApp();
+        }
+
+        function renderScoutView() {
+            if (!Array.isArray(state.scoutCandidates)) state.scoutCandidates = [];
+            const server = scoutServerInfo();
+            const isFull = state.players.length >= 6;
+            const candidates = [...state.scoutCandidates].sort((a,b) => a.rank - b.rank);
+
+            const rows = candidates.map((p, index) => {
+                const tier = scoutRankTier(p.rank);
+                const fee = Math.round((p.salary || 0) * 0.4);
+                const canAfford = state.cash >= fee;
+                const role = getRoleConfig(p.role);
+                return `
+                    <div class="bg-val-dark border border-val-border rounded-xl p-4 flex flex-col lg:flex-row lg:items-center gap-4">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="font-black text-lg text-white">${p.name}</span>
+                                <span class="text-xs px-2 py-1 rounded bg-val-panel border border-val-border ${tier.color} font-black">${p.rankTier}</span>
+                                <span class="text-xs px-2 py-1 rounded bg-val-panel border border-val-border ${role.color} font-bold">${p.role}</span>
+                            </div>
+                            <div class="text-xs text-val-muted mt-1">${server.name} · 지역 랭킹 <b class="text-white">#${Number(p.rank).toLocaleString()}</b> · ${p.agent}</div>
+                            <div class="text-xs text-val-muted mt-1">나이 ${p.age} · 잠재력 <b class="text-cyan-300">${p.potential}</b></div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 text-center min-w-[210px]">
+                            <div><div class="text-[10px] text-val-muted">OVR</div><div class="text-xl font-black text-white">${p.ovr}</div></div>
+                            <div><div class="text-[10px] text-val-muted">계약금</div><div class="text-sm font-bold text-white">${formatMoney(fee)}</div></div>
+                            <div><div class="text-[10px] text-val-muted">연봉</div><div class="text-sm font-bold text-gray-300">${formatMoney(p.salary)}</div></div>
+                        </div>
+                        <div class="flex gap-2 lg:flex-col">
+                            <button onclick="recruitScoutedPlayer(${index})" class="${isFull || !canAfford ? 'bg-gray-800 text-gray-500' : 'bg-val-red hover:bg-val-redHover text-white'} px-4 py-2 rounded-lg text-xs font-black" ${isFull || !canAfford ? 'disabled' : ''}>영입</button>
+                            <button onclick="dismissScoutCandidate(${index})" class="bg-val-panel hover:bg-val-border text-val-muted px-4 py-2 rounded-lg text-xs font-bold border border-val-border">제외</button>
+                        </div>
+                    </div>`;
+            }).join("");
+
+            return `
+                <div class="bg-val-panel border border-val-border rounded-xl p-5">
+                    <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 border-b border-val-border pb-4 mb-4">
+                        <div>
+                            <div class="text-xs font-black text-val-red tracking-wider">REGIONAL SERVER SCOUTING</div>
+                            <h2 class="text-2xl font-black text-white mt-1">🔎 지역 서버 랭킹 스카우트</h2>
+                            <p class="text-xs text-val-muted mt-1">${server.name} · ${server.detail}<br>지역 랭킹을 기준으로 아마추어/랭커 선수를 탐색해 영입할 수 있습니다.</p>
+                        </div>
+                        <div class="bg-val-dark border border-val-border rounded-lg px-4 py-3 text-right">
+                            <div class="text-[10px] text-val-muted">보유 자금</div>
+                            <div class="text-lg font-black text-green-400">${formatMoney(state.cash)}</div>
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-3 gap-3 mb-5">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-300 mb-1">포지션</label>
+                            <select id="scout-role-filter" class="w-full bg-val-dark border border-val-border rounded-lg px-3 py-2 text-sm text-white">
+                                <option value="all">전체 포지션</option>
+                                ${ROLES.map(r => `<option value="${r.id}">${r.name}</option>`).join("")}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-300 mb-1">최대 검색 랭킹</label>
+                            <select id="scout-rank-limit" class="w-full bg-val-dark border border-val-border rounded-lg px-3 py-2 text-sm text-white">
+                                <option value="500">#500 이내 · Radiant/Immortal 상위 · 12,000원</option>
+                                <option value="1500">#1,500 이내 · Immortal · 9,000원</option>
+                                <option value="3500">#3,500 이내 · Immortal · 7,000원</option>
+                                <option value="8000">#8,000 이내 · Ascendant 상위 · 5,000원</option>
+                                <option value="16000" selected>#16,000 이내 · Ascendant · 5,000원</option>
+                                <option value="30000">#30,000 이내 · Ascendant 포함 · 5,000원</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button onclick="scoutPlayers()" class="w-full bg-val-red hover:bg-val-redHover text-white font-black py-2.5 rounded-lg shadow-md">🔎 스카우트 실행</button>
+                        </div>
+                    </div>
+
+                    <div class="mb-4 text-xs text-val-muted">
+                        <span class="text-white font-bold">랭킹이 높을수록 평균 OVR과 잠재력이 높게 생성됩니다.</span>
+                        실제 프로 선수 이적시장과 별개로, 지역 서버 랭커를 발굴하는 시스템입니다.
+                    </div>
+
+                    <div class="flex flex-col gap-3">
+                        ${rows || `<div class="text-center py-12 bg-val-dark border border-dashed border-val-border rounded-xl">
+                            <div class="text-4xl mb-3">🎯</div>
+                            <div class="font-black text-white">아직 스카우트한 선수가 없습니다.</div>
+                            <div class="text-xs text-val-muted mt-1">포지션과 목표 랭킹을 선택하고 스카우트를 실행하세요.</div>
+                        </div>`}
+                    </div>
+                </div>`;
+        }
+
         function renderPageContent() {
             switch (currentPage) {
                 case "dashboard": return renderDashboardView();
                 case "roster": return renderRosterView();
                 case "market": return renderMarketView();
+                case "scout": return renderScoutView();
                 case "training": return renderTrainingView();
                 case "tactics": return renderTacticsView();
                 case "youth": return renderYouthView();
@@ -3514,7 +4119,7 @@ header{position:sticky;z-index:50;}
                         </div>
                     </div>
 
-                    <button class="bg-val-border hover:bg-gray-700 text-white font-bold py-2 rounded-lg text-xs" onclick="closeModal()">취소</button>
+                    <button class="career-cancel-btn" onclick="closeModal()">취소</button>
                 </div>
             `;
             openModal(modalHTML);
@@ -3802,6 +4407,14 @@ function playMatch() {
             }
 
             const isWin = myMapsWon > oppMapsWon;
+            if (!state.careerStats) state.careerStats = { totalWins: 0, totalLosses: 0, seasons: [] };
+            if (isWin) {
+                state.careerStats.totalWins = (state.careerStats.totalWins || 0) + 1;
+                state.yearWins = (state.yearWins || 0) + 1;
+            } else {
+                state.careerStats.totalLosses = (state.careerStats.totalLosses || 0) + 1;
+                state.yearLosses = (state.yearLosses || 0) + 1;
+            }
             const matchLuck = Math.random();
             const resultTone = matchLuck < 0.15 ? '대이변' : (matchLuck > 0.85 ? '정배 결과' : '전술·전력에 따른 결과');
 
@@ -3820,7 +4433,37 @@ function playMatch() {
                 Flex:      { kpr: 0.68, apr: 0.32, acs:  6, adr:  5, kast: 0.01 }
             };
 
-            getStartingPlayers().forEach((p, idx) => {
+            // VLR.gg의 실제 경기에서 보이는 역할별 에이전트 사용 경향을 참고해
+            // 한 팀의 5명은 같은 에이전트를 중복 선택하지 않도록 구성한다.
+            // (상대 팀과의 중복은 허용: 실제 경기에서도 양 팀이 같은 에이전트를 선택할 수 있음)
+            const matchAgentPools = {
+                Duelist: ['Jett','Raze','Neon','Reyna','Yoru','Iso'],
+                Initiator: ['Sova','Fade','Gekko','KAY/O','Breach','Skye'],
+                Controller: ['Omen','Viper','Astra','Clove','Brimstone'],
+                Sentinel: ['Cypher','Killjoy','Chamber','Sage','Deadlock'],
+                Flex: ['KAY/O','Sova','Omen','Viper','Cypher','Jett','Gekko']
+            };
+            function buildUniqueMatchAgents(players) {
+                const used = new Set();
+                return players.map((p, idx) => {
+                    const role = p.role || 'Flex';
+                    const pool = matchAgentPools[role] || matchAgentPools.Flex;
+                    const preferred = p.agent;
+                    if (preferred && pool.includes(preferred) && !used.has(preferred)) {
+                        used.add(preferred);
+                        return preferred;
+                    }
+                    const available = pool.filter(a => !used.has(a));
+                    const picked = available.length ? available[0] : matchAgentPools.Flex.find(a => !used.has(a)) || pool[idx % pool.length];
+                    used.add(picked);
+                    return picked;
+                });
+            }
+
+            const startingPlayersForReport = getStartingPlayers();
+            const matchAgents = buildUniqueMatchAgents(startingPlayersForReport);
+
+            startingPlayersForReport.forEach((p, idx) => {
                 const prof = roleProfile[p.role] || roleProfile.Flex;
                 const skill = Math.max(-0.10, Math.min(0.10, (p.ovr - 85) * 0.012));
                 const formNoise = (Math.random() - 0.5) * 0.12;
@@ -3854,7 +4497,7 @@ function playMatch() {
 
                 matchPlayerStats.push({
                     name: p.name,
-                    agent: p.agent,
+                    agent: matchAgents[idx],
                     role: p.role,
                     kills,
                     deaths,
@@ -3990,29 +4633,69 @@ function playMatch() {
             advanceWeek(true);
         }
 
+        function archiveCurrentSeasonRecord() {
+            if (!state) return;
+            if (!state.careerStats) state.careerStats = { totalWins: 0, totalLosses: 0, seasons: [] };
+            if (!Array.isArray(state.careerStats.seasons)) state.careerStats.seasons = [];
+            if (state.careerStats.seasons.some(x => x.year === state.year)) return;
+            state.careerStats.seasons.push({
+                year: state.year, team: state.myTeamName,
+                wins: state.yearWins || 0, losses: state.yearLosses || 0,
+                trophies: (state.trophies || []).filter(t => t.year === state.year).map(t => t.name)
+            });
+        }
+
         function advanceWeek(fromMatch = false) {
             if (!careerActionAllowed()) return;
             if (state.week >= 20 && !fromMatch) {
                 if (state.year >= 2030) {
+                    archiveCurrentSeasonRecord();
+                    const seasons = [...(state.careerStats.seasons || [])].sort((a,b) => a.year-b.year);
+                    const totalW = state.careerStats.totalWins || 0;
+                    const totalL = state.careerStats.totalLosses || 0;
+                    const trophyCount = (state.trophies || []).length;
+                    const trophyNames = trophyCount ? (state.trophies || []).map(t => `${t.year} ${t.name}`).join(' · ') : '획득한 국제대회 트로피 없음';
                     openModal(`
-                        <div class="text-center flex flex-col gap-4">
-                            <div class="text-5xl">🏆</div>
-                            <h2 class="text-2xl font-black text-white">2030년 챔피언십 대장정 완료</h2>
-                            <p class="text-sm text-val-muted">2026년부터 2030년까지 5년간의 감독 커리어가 명예롭게 마무리되었습니다!</p>
-                            <button class="bg-val-red text-white font-bold py-2.5 rounded-xl mt-2" onclick="location.reload()">새 게임 시작하기</button>
+                        <div class="flex flex-col gap-4 max-h-[80vh] overflow-y-auto">
+                            <div class="text-center">
+                                <div class="text-5xl mb-2">🏛️</div>
+                                <div class="text-[11px] font-black tracking-[0.2em] text-yellow-400">HALL OF FAME</div>
+                                <h2 class="text-3xl font-black text-white mt-1">${state.directorName || 'Manager'}</h2>
+                                <p class="text-sm text-val-muted mt-1">2026–2030 감독 커리어 · ${state.regionName} · ${state.myTeamName}</p>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2">
+                                <div class="bg-val-dark border border-val-border rounded-xl p-3 text-center"><div class="text-[10px] text-val-muted">통산 승</div><div class="text-xl font-black text-green-400 mt-1">${totalW}</div></div>
+                                <div class="bg-val-dark border border-val-border rounded-xl p-3 text-center"><div class="text-[10px] text-val-muted">통산 패</div><div class="text-xl font-black text-val-red mt-1">${totalL}</div></div>
+                                <div class="bg-val-dark border border-val-border rounded-xl p-3 text-center"><div class="text-[10px] text-val-muted">트로피</div><div class="text-xl font-black text-yellow-400 mt-1">${trophyCount}</div></div>
+                            </div>
+                            <div class="bg-val-dark border border-val-border rounded-xl p-3">
+                                <div class="text-xs font-black text-white mb-2">📋 커리어 기록</div>
+                                <div class="flex flex-col gap-1.5">
+                                    ${seasons.map(x => `<div class="flex items-center justify-between text-xs"><span class="font-bold text-white">${x.year} · ${x.team}</span><span class="text-val-muted">${x.wins}승 ${x.losses}패${x.trophies?.length ? ' · 🏆 '+x.trophies.join(', ') : ''}</span></div>`).join('')}
+                                </div>
+                            </div>
+                            <div class="bg-val-dark border border-val-border rounded-xl p-3">
+                                <div class="text-xs font-black text-white mb-1">🏆 주요 우승 기록</div>
+                                <div class="text-xs text-val-muted leading-relaxed">${trophyNames}</div>
+                            </div>
+                            <button class="bg-val-red hover:bg-val-redHover text-white font-black py-3 rounded-xl mt-1" onclick="startNewGame()">새 게임 시작하기</button>
                         </div>
                     `);
                     return;
                 } else {
                     if (evaluateCoachJobSecurity()) {
-                        state.year++; state.week = 1; state.trainingDone = false; state.sponsorDealsUsed = 0; state.sponsorDealsMax = 2; state.sponsorDeals = [];
+                        archiveCurrentSeasonRecord();
+                        state.year++; state.week = 1; state.yearWins = 0; state.yearLosses = 0; state.trainingDone = false; state.sponsorDealsUsed = 0; state.sponsorDealsMax = 2; state.sponsorDeals = [];
                     // 계약이 끝났는데 새 제의를 받지 못했다면 1년 단위 재계약 상태로 유지한다.
                     if (!state.coachContractEndYear || state.coachContractEndYear <= state.year) state.coachContractEndYear = state.year + 1;
                     renderApp(); return;
                     }
                     const wasPromoted = state.pendingPromotion && state.tier === 2;
+                    archiveCurrentSeasonRecord();
                     state.year++;
                     state.week = 1;
+                    state.yearWins = 0;
+                    state.yearLosses = 0;
                     if (wasPromoted) {
                         const reg = VCT_DATA[state.regionKey];
                         if (reg) {
@@ -4066,6 +4749,7 @@ function playMatch() {
                 state.internationalPhaseType = null;
             }
             state.trainingDone = false;
+            if (Array.isArray(state.players)) state.players.forEach(p => { ensureIndividualTrainingState(p); p.individualTrainingDone = false; });
             if (Array.isArray(state.youth)) state.youth.forEach(y => { if (y.ovr < y.potential && Math.random() < (0.18 + state.youthLevel * 0.04) * getDifficultyConfig().growth) y.ovr = Math.min(y.potential, y.ovr + 1); });
 
             const weeklyWages = Math.round(state.players.reduce((sum, p) => sum + p.salary, 0) / 52);
@@ -4144,20 +4828,11 @@ function playMatch() {
                 }
             } else if (state.week === 20) {
                 state.logs.push(`🔄 [${state.year} 오프시즌] 이적시장 및 로스터 재정비 기간이 시작되었습니다.`);
-                let namePool = [...INITIAL_NAMES].sort(() => Math.random() - 0.5);
-                state.freeAgents = [];
-                for (let i = 0; i < 12; i++) {
-                    const roleObj = ROLES[Math.floor(Math.random() * 5)];
-                    state.freeAgents.push({
-                        id: 'fa_' + Math.random().toString(36).substr(2, 9),
-                        name: namePool[i] || `FA_Agent_${i+1}`,
-                        role: roleObj.id,
-                        agent: roleObj.agents[Math.floor(Math.random() * roleObj.agents.length)],
-                        ovr: 75 + Math.floor(Math.random() * 16) + Math.floor((state.year - 2026) * 0.5),
-                        salary: 35000 + Math.floor(Math.random() * 25000),
-                        stats: { matches: 0, kills: 0, deaths: 0, assists: 0, acsSum: 0, mvpCount: 0 }
-                    });
-                }
+                // 오프시즌에는 실제 FA + 같은 권역/티어의 계약 중 선수(이적 대상)를 모두 표시합니다.
+                const existingMyNames = new Set((state.players || []).map(p => String(p.name || '').trim().toLowerCase()));
+                state.freeAgents = createCurrentRealFreeAgents().filter(p => !existingMyNames.has(String(p.name).toLowerCase()));
+                state.freeAgents.push(...buildOffseasonTransferTargets().filter(p => !existingMyNames.has(String(p.name).toLowerCase())));
+                filterFreeAgentsAgainstRosters();
                 openModal(`
                     <div class="text-center flex flex-col gap-4">
                         <div class="text-4xl">🔄</div>
@@ -4187,6 +4862,12 @@ function playMatch() {
             }
             const p = state.freeAgents[index];
             if (!p) return;
+            const isOffseason = getPhaseName(state.week).type === 'offseason';
+            if (p.marketType === 'transfer' && !isOffseason) {
+                showToast('팀 소속 선수는 오프시즌에만 영입할 수 있습니다.');
+                return;
+            }
+            normalizePlayerProfile(p, index);
             p.isStarter = state.players.length < 5;
             const fee = Math.round((p.salary || 0) * 0.4);
 
@@ -4199,6 +4880,7 @@ function playMatch() {
             if (checkBankruptcy()) { renderApp(); return; }
             state.players.push(p);
             state.freeAgents.splice(index, 1);
+            filterFreeAgentsAgainstRosters();
             state.logs.push(`[영입] ${p.name} (${p.role}, OVR ${p.ovr}) 영입 완료.`);
             showToast(`${p.name} 영입 성공!`);
             renderApp();
@@ -4259,7 +4941,11 @@ function playMatch() {
 
             // 방출 선수는 FA 시장으로 이동시켜 다시 영입할 수 있게 합니다.
             if (!Array.isArray(state.freeAgents)) state.freeAgents = [];
+            p.marketType = 'fa';
+            p.sourceTeam = null;
+            p.realFreeAgent = true;
             state.freeAgents.unshift(p);
+            filterFreeAgentsAgainstRosters();
 
             // 잔여 계약 보상금 15%
             state.cash += Math.round((p.salary || 0) * 0.15);
@@ -4269,19 +4955,35 @@ function playMatch() {
         }
 
         function doTrain(type) {
-            if (state.trainingDone) {
-                showToast("이번 주 훈련은 이미 마쳤습니다.");
-                return;
-            }
+            if (state.trainingDone) { showToast("이번 주 팀 훈련은 이미 마쳤습니다."); return; }
             state.trainingDone = true;
-
             if (type === 'aim') state.form = Math.min(100, state.form + 4);
             else if (type === 'tactic') { state.form = Math.min(100, state.form + 2); state.coach = Math.min(100, state.coach + 2); }
             else if (type === 'team') state.morale = Math.min(100, state.morale + 6);
+            state.logs.push("이번 주 팀 훈련을 성공적으로 마쳤습니다."); showToast("팀 훈련 완료!"); renderApp();
+        }
 
-            state.logs.push("이번 주 팀 주간 훈련을 성공적으로 마쳤습니다.");
-            showToast("훈련 완료!");
-            renderApp();
+        function ensureIndividualTrainingState(player) {
+            if (!player) return;
+            if (typeof player.aim !== 'number') player.aim = Math.round((player.ovr || 70) * 0.85);
+            if (typeof player.igl !== 'number') player.igl = 50;
+            if (typeof player.trainingXP !== 'number') player.trainingXP = 0;
+            if (typeof player.individualTrainingDone !== 'boolean') player.individualTrainingDone = false;
+        }
+
+        function trainIndividual(playerIndex, type) {
+            if (!careerActionAllowed()) return;
+            const player = state?.players?.[playerIndex]; if (!player) return;
+            ensureIndividualTrainingState(player);
+            if (player.individualTrainingDone) { showToast(`${player.name}은(는) 이번 주 개인 훈련을 이미 완료했습니다.`); return; }
+            const growth = Math.max(1, Math.floor((state.coach || 45) / 35));
+            let message = '';
+            if (type === 'rank') { const gain=Math.min(2,growth+(Math.random()<0.35?1:0)); player.ovr=Math.min(99,(player.ovr||70)+gain); player.trainingXP+=3; state.form=Math.min(100,state.form+1); message=`랭킹 1등 도전 훈련으로 OVR +${gain}`; }
+            else if (type === 'igl') { const gain=4+Math.floor(Math.random()*3)+Math.floor((state.analyst||40)/50); player.igl=Math.min(99,player.igl+gain); player.trainingXP+=4; state.coach=Math.min(100,state.coach+1); message=`IGL 연습으로 IGL 능력 +${gain}`; }
+            else if (type === 'aim') { const gain=4+Math.floor(Math.random()*3)+Math.floor((state.coach||45)/60); player.aim=Math.min(99,player.aim+gain); if(Math.random()<0.45) player.ovr=Math.min(99,(player.ovr||70)+1); player.trainingXP+=4; message=`에임 연습으로 에임 +${gain}`; }
+            else if (type === 'utility') { const gain=3+Math.floor(Math.random()*3); player.trainingXP+=gain; if(['Controller','Initiator','Sentinel'].includes(player.role)) player.ovr=Math.min(99,(player.ovr||70)+1); message=`유틸리티/전술 연습으로 성장 XP +${gain}`; }
+            else return;
+            player.individualTrainingDone=true; state.logs.push(`🏋️ [개인 훈련] ${player.name} — ${message}`); showToast(`${player.name}: ${message}`); renderApp();
         }
 
         function upgradeStaff(type) {
@@ -4339,7 +5041,8 @@ function playMatch() {
 
         window.onload = () => {
             try {
-                renderApp();
+                if (!state) loadAutoSave();
+        renderApp();
             } catch (e) {
                 console.error(e);
                 document.getElementById('app').innerHTML = `
@@ -4426,7 +5129,9 @@ function playMatch() {
     } catch(e) {} finally { busy=false; }
   }
   setTimeout(checkForUpdate, 5000);
-  setInterval(checkForUpdate, 30000);
+  setInt
+        window.addEventListener('beforeunload', () => saveGameLocal());
+erval(checkForUpdate, 30000);
 })();
 </script>
 </body>
