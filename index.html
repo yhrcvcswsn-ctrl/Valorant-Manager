@@ -567,6 +567,57 @@ header>div{max-width:none!important;width:100%!important;margin:0!important;gap:
 @media(max-width:700px){.bracket-v2-stage{min-width:1050px}}
 </style>
 
+
+<style id="coach-market-ui">.coach-offer-glow{box-shadow:0 0 0 1px rgba(255,70,85,.18),0 12px 30px rgba(255,70,85,.08)}</style>
+
+<style id="global-nav-horizontal-scroll">
+#global-nav{overflow-x:auto!important;overflow-y:hidden!important;flex-wrap:nowrap!important;scroll-behavior:smooth!important;touch-action:pan-x!important;overscroll-behavior-x:contain!important;-webkit-overflow-scrolling:touch!important;cursor:grab}
+#global-nav:active{cursor:grabbing}
+#global-nav .global-nav-btn{flex:0 0 auto!important}
+@media (min-width:900px){#global-nav{mask-image:linear-gradient(to right,transparent 0,#000 12px,#000 calc(100% - 24px),transparent 100%)}}
+</style>
+
+<style id="nav-horizontal-scroll-hard-fix">
+/* 상단 메뉴: 절대 줄어들지 않고 좌우로 스크롤 */
+header { overflow: hidden !important; }
+header > div { min-width: 0 !important; }
+#global-nav {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  flex-wrap: nowrap !important;
+  white-space: nowrap !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: #3a4b60 transparent !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-x: contain !important;
+  touch-action: pan-x !important;
+  cursor: grab;
+}
+#global-nav:active { cursor: grabbing; }
+#global-nav .global-nav-btn {
+  flex: 0 0 auto !important;
+  width: max-content !important;
+  min-width: max-content !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+#global-nav::-webkit-scrollbar { display: block !important; height: 5px !important; }
+#global-nav::-webkit-scrollbar-track { background: transparent !important; }
+#global-nav::-webkit-scrollbar-thumb { background: #3a4b60 !important; border-radius: 99px !important; }
+#season-info { flex: 0 0 auto !important; }
+@media (max-width: 1100px) {
+  header > div { flex-wrap: nowrap !important; }
+  #global-nav { order: initial !important; flex-basis: auto !important; }
+}
+</style>
+<style id="nav-click-fix">
+#global-nav{pointer-events:auto!important;position:relative;z-index:40;}
+#global-nav .global-nav-btn{pointer-events:auto!important;position:relative;z-index:41;cursor:pointer;}
+header{position:sticky;z-index:50;}
+</style>
 </head>
 <body class="min-h-screen flex flex-col antialiased bg-val-dark select-none">
 
@@ -1378,6 +1429,15 @@ header>div{max-width:none!important;width:100%!important;margin:0!important;gap:
         const formatMoney = (n) => "$" + Math.round(n).toLocaleString();
 
         function getPhaseName(week) {
+            if (state && state.tier === 2) {
+                if (week <= 2) return { name: "챌린저스 킥오프 (Challengers Kickoff)", type: "kickoff", desc: "2부 시즌 개막 토너먼트" };
+                if (week <= 9) return { name: "챌린저스 스테이지 1", type: "stage1", desc: "2부 정규리그 — 국제대회 진출 없음" };
+                if (week <= 17) return { name: "챌린저스 스테이지 2", type: "stage2", desc: "2부 정규리그 — 어센션 진출 경쟁" };
+                if (week === 18) return { name: "Challengers Ascension (준결승)", type: "ascension", desc: "상위권 2부 팀에게 1부 승격 기회를 주는 승격 대회" };
+                if (week === 19) return { name: "Challengers Ascension (결승)", type: "ascension", desc: "어센션 우승 시 다음 시즌 1부 VCT 승격" };
+                if (week === 20) return { name: "오프시즌 (Off-Season 이적시장)", type: "offseason", desc: "차기 시즌 대비 선수 영입 및 로스터 재정비 기간" };
+                return { name: "시즌 종료", type: "end", desc: "시즌 마감" };
+            }
             if (week <= 2) return { name: "킥오프 (Kickoff 토너먼트)", type: "kickoff", desc: "시즌 개막 토너먼트" };
             if (week <= 9) return { name: "스테이지 1 (Stage 1 정규리그)", type: "stage1", desc: "8팀 단일 라운드 로빈 — 팀당 7경기" };
             if (week === 10) return { name: "VALORANT Masters 1 (국제대회)", type: "masters1", desc: "Stage 1 상위권 팀이 진출하는 첫 번째 글로벌 마스터즈" };
@@ -1576,6 +1636,10 @@ header>div{max-width:none!important;width:100%!important;margin:0!important;gap:
                 matchHistory: [],
                 sponsorDealsUsed: 0,
                 sponsorDealsMax: 2,
+                coachOffers: [],
+                coachOfferCooldown: 0,
+                coachJobSecurity: 70,
+                coachCareerMoves: 0,
                 internationalMatchesPlayed: 0,
                 internationalMatchTarget: 0,
                 internationalPhaseType: null,
@@ -1583,6 +1647,10 @@ header>div{max-width:none!important;width:100%!important;margin:0!important;gap:
                 internationalTournament: null,
                 internationalHistory: [],
                 internationalHistoryView: null,
+                // 2부 전용 승격 대회 상태: 국제대회에는 참가하지 않는다.
+                ascensionStage: 0,
+                pendingPromotion: false,
+                promotionSeason: null,
                 trophies: [],
                 snsFeed: [],
                 bankrupt: false,
@@ -1927,7 +1995,7 @@ header>div{max-width:none!important;width:100%!important;margin:0!important;gap:
                 ["finance","경영","fa-building-columns"],
                 ["market","선수 시장","fa-store"],
                 ["league","대회 일정","fa-calendar-days"],
-                ["international","국제 대회","fa-globe"],
+                ["international", state?.tier === 2 ? "국제 대회 🔒" : "국제 대회", "fa-globe"],
                 ["world_ranking","세계 순위","fa-chart-line"],
                 ["trophies","트로피 진열장","fa-trophy"],
                 ["stats","선수 기록","fa-chart-pie"],
@@ -1936,8 +2004,21 @@ header>div{max-width:none!important;width:100%!important;margin:0!important;gap:
             nav.innerHTML = items.map(([id,label,icon]) => `<button class="global-nav-btn ${currentPage===id?'active':''}" onclick="navigate('${id}')"><i class="fa-solid ${icon}"></i><span>${label}</span></button>`).join("");
         }
 
+        function enableGlobalNavWheelScroll() {
+            const nav = document.getElementById('global-nav');
+            if (!nav || nav.dataset.wheelBound === '1') return;
+            nav.dataset.wheelBound = '1';
+            nav.addEventListener('wheel', (e) => {
+                if (nav.scrollWidth > nav.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+                    e.preventDefault();
+                    nav.scrollLeft += e.deltaY;
+                }
+            }, {passive:false});
+        }
+
         function renderApp() {
             renderGlobalNav();
+            enableGlobalNavWheelScroll();
             const app = document.getElementById("app");
             const seasonInfo = document.getElementById("season-info");
             const yearTitle = document.getElementById("header-year-title");
@@ -1964,6 +2045,7 @@ header>div{max-width:none!important;width:100%!important;margin:0!important;gap:
                 </main>
             `;
             renderGlobalNav();
+            enableGlobalNavWheelScroll();
         }
 
         function renderNavBtn(pageId, label, iconClass) {
@@ -2053,6 +2135,99 @@ header>div{max-width:none!important;width:100%!important;margin:0!important;gap:
             state.snsFeed = [...reactions, ...state.snsFeed].slice(0, 18);
         }
 
+        function getAllCareerTeams() {
+            const all = [];
+            Object.entries(VCT_DATA || {}).forEach(([regionKey, reg]) => {
+                [...(reg.t1 || []), ...(reg.t2 || [])].forEach(t => {
+                    if (t && t.name && t.name !== state?.myTeamName) all.push({ ...t, regionKey, tier: (reg.t1 || []).some(x => x.name === t.name) ? 1 : 2, regionName: reg.name });
+                });
+            });
+            return all;
+        }
+
+        function coachOfferStrength() {
+            const pool = state.tier === 1 ? state.t1Teams : state.t2Teams;
+            const team = pool.find(t => t.name === state.myTeamName);
+            const games = (team?.w || 0) + (team?.l || 0);
+            const winRate = games ? team.w / games : 0.5;
+            const top4 = checkTop4Qualification();
+            return { team, games, winRate, top4 };
+        }
+
+        function maybeGenerateCoachOffer(force = false) {
+            if (!state || state.bankrupt) return false;
+            if (!Array.isArray(state.coachOffers)) state.coachOffers = [];
+            if (state.coachOffers.length >= 2) return false;
+            if (state.coachOfferCooldown > 0 && !force) { state.coachOfferCooldown--; return false; }
+            const { games, winRate, top4 } = coachOfferStrength();
+            if (games < 4 && !force) return false;
+            const quality = (winRate - 0.5) * 100 + (top4 ? 18 : 0) + (state.reputation - 50) * 0.12;
+            const chance = Math.max(0.06, Math.min(0.50, 0.10 + quality * 0.012));
+            if (!force && Math.random() > chance) return false;
+            const candidates = getAllCareerTeams();
+            if (!candidates.length) return false;
+            const sorted = candidates.sort((a,b) => (b.power || 0) - (a.power || 0));
+            const pool = quality >= 15 ? sorted.slice(0, Math.min(6, sorted.length)) : sorted.slice(Math.floor(sorted.length * 0.25), Math.min(sorted.length, Math.floor(sorted.length * 0.75) + 2));
+            const target = pool[Math.floor(Math.random() * Math.max(1, pool.length))] || candidates[0];
+            const salary = Math.min(125000, Math.round((45000 + state.reputation * 900 + Math.max(0, quality) * 1100) * (target.tier === 1 ? 1.25 : 1)));
+            const offer = {
+                id: 'co_' + Math.random().toString(36).slice(2,10), teamName: target.name, teamColor: target.color,
+                regionKey: target.regionKey, tier: target.tier, regionName: target.regionName,
+                salary, years: quality >= 35 ? 3 : 2,
+                reason: top4 ? '국제대회 진출권을 확보한 성과를 높게 평가했습니다.' : `최근 ${Math.round(winRate*100)}% 승률과 팀 성장세를 주목했습니다.`
+            };
+            state.coachOffers.push(offer);
+            state.coachOfferCooldown = 3;
+            state.logs.push(`📨 [감독 이적제의] ${offer.teamName}에서 ${offer.years}년 감독 계약을 제안했습니다.`);
+            openModal(renderCoachOfferModal(offer));
+            return true;
+        }
+
+        function renderCoachOfferModal(offer) {
+            return `<div class="flex flex-col gap-5">
+                <div class="text-center"><div class="text-5xl mb-2">📨</div><div class="text-xs font-black text-val-red tracking-widest">HEAD COACH OFFER</div><h2 class="text-2xl font-black text-white mt-1">${offer.teamName} 감독 이적 제의</h2><p class="text-sm text-val-muted mt-2">${offer.reason}</p></div>
+                <div class="grid grid-cols-3 gap-2"><div class="bg-val-dark border border-val-border rounded-lg p-3 text-center"><div class="text-[10px] text-val-muted">계약</div><div class="font-black text-white mt-1">${offer.years}년</div></div><div class="bg-val-dark border border-val-border rounded-lg p-3 text-center"><div class="text-[10px] text-val-muted">연봉</div><div class="font-black text-green-400 mt-1">${formatMoney(offer.salary)}</div></div><div class="bg-val-dark border border-val-border rounded-lg p-3 text-center"><div class="text-[10px] text-val-muted">구단</div><div class="font-black text-white mt-1">${offer.tier === 1 ? 'TIER 1' : 'TIER 2'}</div></div></div>
+                <div class="flex gap-2"><button class="flex-1 bg-val-red hover:bg-val-redHover text-white font-black py-3 rounded-lg" onclick="acceptCoachOffer('${offer.id}')">이적 수락</button><button class="flex-1 bg-val-card border border-val-border text-gray-300 font-bold py-3 rounded-lg" onclick="declineCoachOffer('${offer.id}')">거절</button></div>
+            </div>`;
+        }
+
+        function renderCoachOfferPanel() {
+            const offers = Array.isArray(state?.coachOffers) ? state.coachOffers : [];
+            if (!offers.length) return `<div class="bg-val-panel border border-val-border rounded-xl p-5 flex flex-col gap-3"><div class="flex justify-between items-center"><h3 class="text-base font-bold text-white">📨 감독 이적시장</h3><span class="text-[10px] text-val-muted">성과에 따라 제의</span></div><div class="text-xs text-val-muted bg-val-dark rounded-lg p-3">좋은 성적을 내면 다른 구단의 감독 오퍼가 올 수 있어. 성적이 크게 떨어지면 시즌 종료 후 경질되어 다른 팀으로 강제 이적될 수도 있어.</div></div>`;
+            return `<div class="bg-val-panel border border-val-red/30 rounded-xl p-5 flex flex-col gap-3"><div class="flex justify-between items-center"><h3 class="text-base font-bold text-white">📨 받은 감독 오퍼</h3><span class="text-[10px] text-green-400 font-bold">${offers.length}건</span></div>${offers.map(o=>`<div class="bg-val-dark border border-val-border rounded-lg p-3 flex items-center justify-between gap-3"><div><div class="font-black text-white">${o.teamName}</div><div class="text-[10px] text-val-muted">${o.years}년 · ${formatMoney(o.salary)}/년 · ${o.tier===1?'Tier 1':'Tier 2'}</div></div><button class="bg-val-red text-white text-xs font-bold px-3 py-2 rounded-lg" onclick="openCoachOffer('${o.id}')">제안 보기</button></div>`).join('')}</div>`;
+        }
+
+        function openCoachOffer(id) { const offer = (state.coachOffers || []).find(o => o.id === id); if (offer) openModal(renderCoachOfferModal(offer)); }
+        function declineCoachOffer(id) {
+            const idx = (state.coachOffers || []).findIndex(o => o.id === id); if (idx < 0) return;
+            const offer = state.coachOffers[idx]; state.coachOffers.splice(idx,1);
+            state.logs.push(`📪 [감독 이적제의] ${offer.teamName}의 제의를 거절했습니다.`); closeModal(); renderApp();
+        }
+        function createCoachMoveRoster(target) {
+            const basePower = target?.power || 78, names = [...INITIAL_NAMES].sort(() => Math.random() - 0.5), roles = ['Duelist','Initiator','Controller','Sentinel','Flex'];
+            return roles.map((role,i)=>{ const cfg=getRoleConfig(role), ovr=Math.max(70,Math.min(95,Math.round(basePower-3+Math.random()*8))); return {id:'p_'+Math.random().toString(36).slice(2,11),name:names[i]||`Player${i+1}`,role,agent:cfg.agents[Math.floor(Math.random()*cfg.agents.length)],ovr,salary:30000+Math.floor(Math.random()*26000),isStarter:true,stats:{matches:0,kills:0,deaths:0,assists:0,acsSum:0,mvpCount:0}}; });
+        }
+        function moveCoachToTeam(target, forced=false) {
+            const oldTeam=state.myTeamName; state.myTeamName=target.name; state.myTeamColor=target.color||'bg-val-red text-white'; state.regionKey=target.regionKey; state.regionName=target.regionName; state.tier=target.tier;
+            const regData=VCT_DATA[target.regionKey];
+            if(regData){ state.t1Teams=regData.t1.map(t=>({name:t.name,color:t.color,power:t.power,w:0,l:0})); state.t2Teams=regData.t2.map(t=>({name:t.name,color:t.color,power:t.power,academy:!!t.academy,w:0,l:0})); }
+            state.players=createCoachMoveRoster(target); state.maxRoster=6; state.startersRequired=5; state.cash=Math.max(state.cash,forced?300000:450000); state.coachCareerMoves=(state.coachCareerMoves||0)+1; state.coachJobSecurity=70; state.coachOffers=[];
+            state.logs.push(`${forced?'🚨 [강제 감독 이적]':'✈️ [감독 이적]'} ${oldTeam} → ${target.name} (${target.regionName})`);
+        }
+        function acceptCoachOffer(id) {
+            const idx=(state.coachOffers||[]).findIndex(o=>o.id===id); if(idx<0)return; const offer=state.coachOffers[idx];
+            const target=getAllCareerTeams().find(t=>t.name===offer.teamName&&t.regionKey===offer.regionKey); if(!target){showToast('해당 구단 정보를 찾을 수 없습니다.');return;}
+            moveCoachToTeam(target,false); state.cash+=offer.salary; state.reputation=Math.min(100,state.reputation+4); closeModal();
+            openModal(`<div class="text-center flex flex-col gap-4"><div class="text-5xl">✈️</div><h2 class="text-2xl font-black text-white">감독 이적 완료</h2><p class="text-sm text-val-muted">${target.name}의 새 감독으로 부임했습니다.<br>계약 보너스 <b class="text-green-400">+${formatMoney(offer.salary)}</b>가 지급되었습니다.</p><button class="bg-val-red text-white font-black py-3 rounded-lg" onclick="closeModal();renderApp()">새 구단에서 시작</button></div>`);
+        }
+        function evaluateCoachJobSecurity() {
+            if(!state)return false; const pool=state.tier===1?state.t1Teams:state.t2Teams; const team=pool.find(t=>t.name===state.myTeamName); const games=(team?.w||0)+(team?.l||0); if(games<5)return false;
+            const winRate=team.w/games, top4=checkTop4Qualification(); state.coachJobSecurity=Math.round(Math.max(0,Math.min(100,winRate*100+(top4?28:0)-(state.morale<40?10:0))));
+            if(winRate>=0.62||top4)return false;
+            if(winRate<=0.38&&!top4){ const candidates=getAllCareerTeams().filter(t=>t.tier===state.tier); if(!candidates.length)return false; const target=candidates[Math.floor(Math.random()*candidates.length)], old=state.myTeamName; moveCoachToTeam(target,true); state.logs.push(`🟥 [경질] ${old}는 시즌 성적 부진으로 감독 계약이 종료되었습니다.`); openModal(`<div class="text-center flex flex-col gap-4"><div class="text-5xl">🟥</div><div class="text-xs font-black text-val-red tracking-widest">COACH DISMISSED</div><h2 class="text-2xl font-black text-white">${old}에서 경질되었습니다</h2><p class="text-sm text-val-muted">시즌 성적 부진으로 계약이 종료되어 다른 구단의 감독으로 강제 이적되었습니다.</p><div class="bg-val-dark border border-val-border rounded-lg p-4"><div class="text-xs text-val-muted">새로운 부임 구단</div><div class="text-xl font-black text-white mt-1">${target.name}</div></div><button class="bg-val-red text-white font-black py-3 rounded-lg" onclick="closeModal();renderApp()">강제 이적 수락</button></div>`); return true; }
+            return false;
+        }
+
         function renderDashboardView() {
             const logsHTML = state.logs.slice(-8).reverse().map(log => 
                 `<div class="py-2 border-b border-val-border/60 last:border-0 text-sm text-gray-300 font-medium">▸ ${log}</div>`
@@ -2069,6 +2244,12 @@ header>div{max-width:none!important;width:100%!important;margin:0!important;gap:
             let actionBtnLabel = `⚔️ 다음 매치 진행 (BO3)`;
             if (isInternational) {
                 actionBtnLabel = isQualified ? `🌍 ${phase.name} 토너먼트 진행` : `☕ ${phase.name} 진출 실패 (휴식 및 시뮬레이션)`;
+            }
+            if (phase.type === 'ascension') {
+                if (state.ascensionStage === 0) actionBtnLabel = `🔒 ${phase.name} 참가 불가`;
+                else if (state.ascensionStage === 1) actionBtnLabel = `⚔️ 어센션 준결승 진행`;
+                else if (state.ascensionStage === 2) actionBtnLabel = `🏆 어센션 결승 진행`;
+                else actionBtnLabel = `☕ 어센션 탈락 — 다음 시즌 준비`;
             }
             if (isOffseason) actionBtnLabel = `🔄 오프시즌 마무리 및 ${state.year + 1}년 진입`;
 
@@ -2141,6 +2322,7 @@ header>div{max-width:none!important;width:100%!important;margin:0!important;gap:
                                     </div>`).join('') : '<div class="text-xs text-val-muted text-center py-5">첫 경기를 진행하면 실시간 반응이 표시됩니다.</div>'}
                             </div>
                         </div>
+                        ${renderCoachOfferPanel()}
                         <div class="bg-val-panel border border-val-border rounded-xl p-5 flex flex-col gap-3">
                             <h3 class="text-base font-bold text-white border-b border-val-border pb-2 flex items-center gap-2">
                                 <i class="fa-solid fa-newspaper text-val-red"></i> 구단 최근 피드
@@ -2602,6 +2784,19 @@ header>div{max-width:none!important;width:100%!important;margin:0!important;gap:
         }
 
         function renderInternationalView() {
+            if (state && state.tier === 2) {
+                return `<div class="bg-val-panel border border-val-border rounded-xl p-8 text-center">
+                    <div class="text-5xl mb-4">🔒</div>
+                    <div class="text-xs font-black text-val-accent tracking-widest">CHALLENGERS ONLY</div>
+                    <h2 class="text-2xl font-black text-white mt-2">2부 팀은 국제대회에 참가할 수 없습니다</h2>
+                    <p class="text-sm text-val-muted mt-2 max-w-xl mx-auto leading-relaxed">Challengers 팀의 국제대회(Masters / Champions) 출전은 잠겨 있습니다.<br>대신 시즌 후반 <b class="text-white">Challengers Ascension</b>에서 1부 VCT 승격 기회를 얻을 수 있습니다.</p>
+                    <div class="grid sm:grid-cols-3 gap-3 max-w-2xl mx-auto mt-6 text-left">
+                        <div class="bg-val-dark border border-val-border rounded-lg p-4"><div class="text-[10px] text-val-muted">국제대회</div><div class="font-black text-val-red mt-1">참가 불가</div></div>
+                        <div class="bg-val-dark border border-val-border rounded-lg p-4"><div class="text-[10px] text-val-muted">승격 대회</div><div class="font-black text-val-accent mt-1">Ascension</div></div>
+                        <div class="bg-val-dark border border-val-border rounded-lg p-4"><div class="text-[10px] text-val-muted">승격 보상</div><div class="font-black text-green-400 mt-1">다음 시즌 1부</div></div>
+                    </div>
+                </div>`;
+            }
             const phase=getPhaseName(state.week), isIntl=['masters1','masters2','champions'].includes(phase.type);
             const history=Array.isArray(state.internationalHistory)?state.internationalHistory:[];
             let selected=null, selectedArchived=false;
@@ -2930,7 +3125,40 @@ header>div{max-width:none!important;width:100%!important;margin:0!important;gap:
             }
 
             const isInternational = phase.type === 'masters1' || phase.type === 'masters2' || phase.type === 'champions';
+            const isAscension = phase.type === 'ascension' && state.tier === 2;
             const isQualified = checkTop4Qualification();
+
+            if (isInternational && state.tier === 2) {
+                showToast("2부 팀은 Masters / Champions에 참가할 수 없습니다.");
+                return;
+            }
+
+            if (isAscension) {
+                if (state.week === 18) {
+                    if (!isQualified) {
+                        state.ascensionStage = 0;
+                        state.logs.push(`⚠️ [${state.year} Ascension] 리그 상위권에 들지 못해 승격 대회에 참가하지 못했습니다.`);
+                        showToast("어센션 진출 실패 — 다음 시즌을 준비하세요.");
+                        advanceWeek(true);
+                        return;
+                    }
+                    state.ascensionStage = 1;
+                } else if (state.week === 19 && state.ascensionStage !== 2) {
+                    if (state.ascensionStage === 3) {
+                        showToast("어센션 탈락 — 오프시즌으로 이동합니다.");
+                        advanceWeek(true);
+                        return;
+                    }
+                    if (state.ascensionStage === 4) {
+                        showToast("이미 1부 VCT 승격을 확정했습니다.");
+                        advanceWeek(true);
+                        return;
+                    }
+                    showToast("어센션 결승에 진출하지 못했습니다.");
+                    advanceWeek(true);
+                    return;
+                }
+            }
 
             if (isInternational && !isQualified) {
                 showToast("상위 4위 안에 들지 못해 국제대회 진출이 좌절되었습니다. 이번 주는 시뮬레이션으로 넘어갑니다.");
@@ -3120,6 +3348,34 @@ header>div{max-width:none!important;width:100%!important;margin:0!important;gap:
             // 경기 직후 SNS 반응을 생성해 대시보드에 실시간처럼 표시
             addSNSReactions(generateSNSReactions(isWin, opp.name, myMapsWon, oppMapsWon, matchPlayerStats));
 
+            if (isAscension) {
+                if (state.week === 18) {
+                    if (isWin) {
+                        state.ascensionStage = 2;
+                        state.logs.push(`🟩 [${state.year} Ascension] 준결승 승리 — 1부 승격을 향한 결승에 진출했습니다!`);
+                        showToast("어센션 결승 진출! 🏆");
+                    } else {
+                        state.ascensionStage = 3;
+                        state.logs.push(`🟥 [${state.year} Ascension] 준결승 패배 — 승격 기회를 놓쳤습니다.`);
+                        showToast("어센션 탈락...");
+                    }
+                } else if (state.week === 19) {
+                    if (isWin) {
+                        state.ascensionStage = 4;
+                        state.pendingPromotion = true;
+                        state.promotionSeason = state.year + 1;
+                        state.reputation = Math.min(100, state.reputation + 8);
+                        state.fan = Math.min(100, state.fan + 10);
+                        state.logs.push(`🏆 [${state.year} Ascension] 우승! ${state.year + 1} 시즌 1부 VCT 승격을 확정했습니다.`);
+                        showToast("어센션 우승! 다음 시즌 1부 VCT 승격 🎉");
+                    } else {
+                        state.ascensionStage = 3;
+                        state.logs.push(`🟥 [${state.year} Ascension] 결승 패배 — 다음 시즌에도 2부에서 도전합니다.`);
+                        showToast("어센션 준우승 — 2부 잔류");
+                    }
+                }
+            }
+
             if (isInternational) {
                 const tournament=state.internationalTournament; const match=tournament?.matches?.[tournament.playerMatchId];
                 if (match) { match.status='done'; match.winner=isWin?state.myTeamName:opp.name; match.loser=isWin?opp.name:state.myTeamName; match.scoreA=match.a===state.myTeamName?myMapsWon:oppMapsWon; match.scoreB=match.a===state.myTeamName?oppMapsWon:myMapsWon; }
@@ -3141,6 +3397,7 @@ header>div{max-width:none!important;width:100%!important;margin:0!important;gap:
                 intlPrepareNextPlayerMatch(true); renderApp(); return;
             }
 
+            if (state.week >= 4 && state.week <= 18) maybeGenerateCoachOffer(false);
             advanceWeek(true);
         }
 
@@ -3158,11 +3415,36 @@ header>div{max-width:none!important;width:100%!important;margin:0!important;gap:
                     `);
                     return;
                 } else {
+                    if (evaluateCoachJobSecurity()) {
+                        state.year++; state.week = 1; state.trainingDone = false; state.sponsorDealsUsed = 0; state.sponsorDealsMax = 2; renderApp(); return;
+                    }
+                    const wasPromoted = state.pendingPromotion && state.tier === 2;
                     state.year++;
                     state.week = 1;
+                    if (wasPromoted) {
+                        const reg = VCT_DATA[state.regionKey];
+                        if (reg) {
+                            const currentTeam = { name: state.myTeamName, color: state.myTeamColor, power: calculateTeamPower(), w: 0, l: 0 };
+                            const t1 = reg.t1.map(t => ({name:t.name,color:t.color,power:t.power,w:0,l:0}));
+                            // 기존 1부 최하위 팀 자리를 승격팀이 차지한다.
+                            t1.sort((a,b) => a.power - b.power);
+                            t1[0] = currentTeam;
+                            state.t1Teams = t1;
+                            state.tier = 1;
+                            state.pendingPromotion = false;
+                            state.promotionSeason = null;
+                            state.ascensionStage = 0;
+                            state.logs.push(`⬆️ [${state.year} 시즌 개막] ${state.myTeamName}가 Ascension 우승으로 1부 VCT에 승격했습니다!`);
+                            showToast(`${state.year}년 1부 VCT 승격 완료! 🏆`);
+                        }
+                    }
+
                     state.trainingDone = false;
                     state.sponsorDealsUsed = 0;
                     state.sponsorDealsMax = 2;
+                    state.ascensionStage = 0;
+                    state.pendingPromotion = false;
+                    state.promotionSeason = null;
                     state.t1Teams.forEach(t => { t.w = 0; t.l = 0; t.power += 1; });
                     state.t2Teams.forEach(t => { t.w = 0; t.l = 0; t.power += 1; });
                     generateYouthProspects(2);
@@ -3219,27 +3501,53 @@ header>div{max-width:none!important;width:100%!important;margin:0!important;gap:
                     </div>
                 `);
             } else if (state.week === 18) {
-                const isQualified = checkTop4Qualification();
-                state.logs.push(`🌍 [${state.year} Masters 2] 개막! (상위 4팀 진출 여부: ${isQualified ? '성공' : '실패'})`);
-                openModal(`
-                    <div class="text-center flex flex-col gap-4">
-                        <div class="text-4xl">🌍</div>
-                        <h2 class="text-2xl font-black text-val-accent">VALORANT Masters 2 개막!</h2>
-                        <p class="text-sm text-val-muted">스테이지 1 종료 후 상위 4개 팀만 참가하는 두 번째 마스터즈 무대입니다!<br>내 팀 진출 상태: <span class="${isQualified ? 'text-green-400 font-bold' : 'text-val-red font-bold'}">${isQualified ? '진출 성공 (TOP 4)' : '진출 실패'}</span></p>
-                        <button class="bg-val-red text-white font-bold py-2 rounded-lg" onclick="closeModal()">확인</button>
-                    </div>
-                `);
+                if (state.tier === 2) {
+                    const isQualified = checkTop4Qualification();
+                    state.ascensionStage = isQualified ? 1 : 0;
+                    state.logs.push(`⬆️ [${state.year} Ascension] 어센션 개막! (TOP 4 진출: ${isQualified ? '성공' : '실패'})`);
+                    openModal(`
+                        <div class="text-center flex flex-col gap-4">
+                            <div class="text-4xl">⬆️</div>
+                            <h2 class="text-2xl font-black text-val-accent">Challengers Ascension 개막!</h2>
+                            <p class="text-sm text-val-muted">2부 팀에게 주어지는 <b>1부 VCT 승격 기회</b>입니다.<br>내 팀 진출 상태: <span class="${isQualified ? 'text-green-400 font-bold' : 'text-val-red font-bold'}">${isQualified ? '진출 성공 (TOP 4)' : '진출 실패'}</span></p>
+                            <div class="bg-val-dark border border-val-border rounded-lg p-3 text-xs text-val-muted">Masters / Champions 참가권은 없으며, 어센션 우승 시 다음 시즌 1부 VCT로 승격합니다.</div>
+                            <button class="bg-val-red text-white font-bold py-2 rounded-lg" onclick="closeModal()">확인</button>
+                        </div>
+                    `);
+                } else {
+                    const isQualified = checkTop4Qualification();
+                    state.logs.push(`🌍 [${state.year} Masters 2] 개막! (상위 4팀 진출 여부: ${isQualified ? '성공' : '실패'})`);
+                    openModal(`
+                        <div class="text-center flex flex-col gap-4">
+                            <div class="text-4xl">🌍</div>
+                            <h2 class="text-2xl font-black text-val-accent">VALORANT Masters 2 개막!</h2>
+                            <p class="text-sm text-val-muted">스테이지 1 종료 후 상위 4개 팀만 참가하는 두 번째 마스터즈 무대입니다!<br>내 팀 진출 상태: <span class="${isQualified ? 'text-green-400 font-bold' : 'text-val-red font-bold'}">${isQualified ? '진출 성공 (TOP 4)' : '진출 실패'}</span></p>
+                            <button class="bg-val-red text-white font-bold py-2 rounded-lg" onclick="closeModal()">확인</button>
+                        </div>
+                    `);
+                }
             } else if (state.week === 19) {
-                const isQualified = checkTop4Qualification();
-                state.logs.push(`🏆 [${state.year} Champions] 최종 월드 챔피언십 개막! (상위 4팀 진출 여부: ${isQualified ? '성공' : '실패'})`);
-                openModal(`
-                    <div class="text-center flex flex-col gap-4">
-                        <div class="text-5xl">👑</div>
-                        <h2 class="text-2xl font-black text-yellow-400">VALORANT Champions 개막!</h2>
-                        <p class="text-sm text-val-muted">스테이지 2까지의 성적 기준 상위 4개 팀만 참가하는 최종 왕중왕전 무대입니다!<br>내 팀 진출 상태: <span class="${isQualified ? 'text-green-400 font-bold' : 'text-val-red font-bold'}">${isQualified ? '진출 성공 (TOP 4)' : '진출 실패'}</span></p>
-                        <button class="bg-val-red text-white font-bold py-2 rounded-lg" onclick="closeModal()">확인</button>
-                    </div>
-                `);
+                if (state.tier === 2) {
+                    openModal(`
+                        <div class="text-center flex flex-col gap-4">
+                            <div class="text-5xl">🏆</div>
+                            <h2 class="text-2xl font-black text-val-accent">Ascension 결승</h2>
+                            <p class="text-sm text-val-muted">결승에서 승리하면 <b>다음 시즌 1부 VCT 승격</b>이 확정됩니다.</p>
+                            <button class="bg-val-red text-white font-bold py-2 rounded-lg" onclick="closeModal()">확인</button>
+                        </div>
+                    `);
+                } else {
+                    const isQualified = checkTop4Qualification();
+                    state.logs.push(`🏆 [${state.year} Champions] 최종 월드 챔피언십 개막! (상위 4팀 진출 여부: ${isQualified ? '성공' : '실패'})`);
+                    openModal(`
+                        <div class="text-center flex flex-col gap-4">
+                            <div class="text-5xl">👑</div>
+                            <h2 class="text-2xl font-black text-yellow-400">VALORANT Champions 개막!</h2>
+                            <p class="text-sm text-val-muted">스테이지 2까지의 성적 기준 상위 4개 팀만 참가하는 최종 왕중왕전 무대입니다!<br>내 팀 진출 상태: <span class="${isQualified ? 'text-green-400 font-bold' : 'text-val-red font-bold'}">${isQualified ? '진출 성공 (TOP 4)' : '진출 실패'}</span></p>
+                            <button class="bg-val-red text-white font-bold py-2 rounded-lg" onclick="closeModal()">확인</button>
+                        </div>
+                    `);
+                }
             } else if (state.week === 20) {
                 state.logs.push(`🔄 [${state.year} 오프시즌] 이적시장 및 로스터 재정비 기간이 시작되었습니다.`);
                 let namePool = [...INITIAL_NAMES].sort(() => Math.random() - 0.5);
@@ -3268,6 +3576,7 @@ header>div{max-width:none!important;width:100%!important;margin:0!important;gap:
                 state.logs.push(`⏳ ${state.year}년 ${state.week}주차 (${newPhase.name})가 시작되었습니다.`);
             }
 
+            if (!fromMatch && state.week >= 4 && state.week <= 18) maybeGenerateCoachOffer(false);
             renderApp();
         }
 
@@ -3436,5 +3745,54 @@ header>div{max-width:none!important;width:100%!important;margin:0!important;gap:
             }
         };
     </script>
+
+<script id="nav-horizontal-scroll-js">
+(function(){
+  function enableNavScroll(){
+    const nav=document.getElementById('global-nav');
+    if(!nav || nav.dataset.scrollReady==='1') return;
+    nav.dataset.scrollReady='1';
+
+    // 세로 휠을 상단 메뉴의 가로 스크롤로 변환
+    nav.addEventListener('wheel', function(e){
+      if(nav.scrollWidth > nav.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)){
+        e.preventDefault();
+        nav.scrollLeft += e.deltaY;
+      }
+    }, {passive:false});
+
+    // 드래그 스크롤은 실제로 움직였을 때만 클릭을 막는다.
+    // 따라서 탭을 그냥 클릭하면 onclick="navigate(...)"가 정상 실행된다.
+    let down=false, dragging=false, startX=0, startScroll=0;
+    nav.addEventListener('mousedown', function(e){
+      if(e.button!==0) return;
+      down=true; dragging=false; startX=e.clientX; startScroll=nav.scrollLeft;
+    });
+    window.addEventListener('mousemove', function(e){
+      if(!down) return;
+      const dx=e.clientX-startX;
+      if(Math.abs(dx)>6){
+        dragging=true;
+        nav.scrollLeft=startScroll-dx;
+      }
+    });
+    window.addEventListener('mouseup', function(){
+      down=false;
+      setTimeout(()=>{ dragging=false; },0);
+    });
+    nav.addEventListener('click', function(e){
+      if(dragging){
+        e.preventDefault();
+        e.stopPropagation();
+        dragging=false;
+      }
+    }, true);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', enableNavScroll);
+  else enableNavScroll();
+  const mo=new MutationObserver(enableNavScroll);
+  mo.observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
 </body>
 </html>
