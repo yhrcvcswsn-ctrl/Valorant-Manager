@@ -65,7 +65,11 @@
         }
 
 .home-breaking-bar{display:flex;align-items:center;gap:9px;background:linear-gradient(90deg,rgba(255,70,85,.16),rgba(255,70,85,.04));border:1px solid rgba(255,70,85,.28);padding:9px 12px;margin-bottom:10px;overflow:hidden}.home-breaking-label{font-size:9px;font-weight:1000;letter-spacing:.14em;color:#ff4655;white-space:nowrap}.home-breaking-dot{width:6px;height:6px;border-radius:50%;background:#ff4655;box-shadow:0 0 10px rgba(255,70,85,.8);flex:none}.home-breaking-text{font-size:11px;font-weight:800;color:#f4f4f5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.home-news-item{cursor:pointer;transition:transform .16s ease,border-color .16s ease,background .16s ease}.home-news-item:hover{transform:translateX(3px);border-color:rgba(255,70,85,.45)!important;background:rgba(255,255,255,.035)}.home-news-item.is-breaking{border-color:rgba(255,70,85,.35)!important}.home-news-arrow{margin-left:auto;align-self:center;color:#6b7280;font-size:24px;line-height:1}.home-news-detail{display:flex;flex-direction:column;gap:12px;text-align:center}.home-news-detail-kicker{font-size:10px;font-weight:900;letter-spacing:.14em;color:#ff4655}.home-news-detail-icon{font-size:48px}.home-news-detail h2{font-size:24px;font-weight:1000;color:#fff;margin:0}.home-news-detail p{font-size:13px;color:#9ca3af;line-height:1.7;margin:0}.home-news-detail-meta{font-size:10px;color:#6b7280}
-.regional-bracket-wrap{overflow-x:auto;padding-bottom:4px}.regional-bracket-grid{min-width:980px;display:grid;grid-template-columns:1.15fr 1fr .9fr 1.15fr .95fr .95fr;gap:12px;align-items:start}.regional-bracket-label{font-size:10px;font-weight:900;color:#8c98a8;background:#101a27;border:1px solid #1e2c3d;border-radius:5px;padding:7px 8px;text-align:center;margin-bottom:8px;letter-spacing:.04em}.bracket-mini-match{background:#0d1622;border:1px solid #243346;border-radius:7px;padding:7px;margin-bottom:10px;box-shadow:0 4px 12px rgba(0,0,0,.14)}.bracket-mini-final{border-color:rgba(255,70,85,.65);box-shadow:0 0 14px rgba(255,70,85,.10)}.bracket-mini-title{font-size:9px;font-weight:900;color:#8c98a8;display:flex;justify-content:space-between;margin-bottom:5px}.bracket-mini-title span{color:#ff4655}.bracket-mini-team{display:flex;justify-content:space-between;gap:8px;padding:4px 5px;border-radius:4px;background:#111c2a;color:#fff;font-size:10px;margin-top:2px}.bracket-mini-team b{color:#667386}.regional-bracket-spacer{padding-top:34px}.regional-bracket-grand{padding-top:78px}</style>
+.regional-bracket-wrap{overflow-x:auto;padding-bottom:4px}.regional-bracket-grid{min-width:980px;display:grid;grid-template-columns:1.15fr 1fr .9fr 1.15fr .95fr .95fr;gap:12px;align-items:start}.regional-bracket-label{font-size:10px;font-weight:900;color:#8c98a8;background:#101a27;border:1px solid #1e2c3d;border-radius:5px;padding:7px 8px;text-align:center;margin-bottom:8px;letter-spacing:.04em}.bracket-mini-match{background:#0d1622;border:1px solid #243346;border-radius:7px;padding:7px;margin-bottom:10px;box-shadow:0 4px 12px rgba(0,0,0,.14)}.bracket-mini-final{border-color:rgba(255,70,85,.65);box-shadow:0 0 14px rgba(255,70,85,.10)}.bracket-mini-title{font-size:9px;font-weight:900;color:#8c98a8;display:flex;justify-content:space-between;margin-bottom:5px}.bracket-mini-title span{color:#ff4655}.bracket-mini-team{display:flex;justify-content:space-between;gap:8px;padding:4px 5px;border-radius:4px;background:#111c2a;color:#fff;font-size:10px;margin-top:2px}.bracket-mini-team b{color:#667386}.regional-bracket-spacer{padding-top:34px}.regional-bracket-grand{padding-top:78px}
+/* 팀 이름 클릭 → 상세정보 */
+.team-detail-link{display:inline-flex;align-items:center;gap:4px;background:transparent;border:0;padding:0;cursor:pointer;color:inherit;text-align:left}
+.team-detail-link:hover{text-decoration:underline;text-underline-offset:3px}
+</style>
 
 <style>
 :root{--red:#ff4655;--redHover:#e03e4b;--dark:#0f1923;--panel:#171e27;--card:#1f2733;--border:#2a3545;--muted:#8b95a5;--accent:#00e5ff}
@@ -1250,7 +1254,7 @@ header{background:rgba(4,9,15,.94)!important;border-bottom:1px solid #26384d!imp
                             { name: "Munchkin", role: "전략가", agent: "Omen", ovr: 87, salary: 63200 },
                             { name: "Meteor", role: "감시자", agent: "Cypher", ovr: 86, salary: 62100 },
                             { name: "iZu", role: "타격대", agent: "Jett", ovr: 85, salary: 61000 },
-                            { name: "DH", role: "전략가", agent: "Omen", ovr: 77, potential: 88, salary: 52200, isSixth: true }
+                            { name: "DH", role: "전략가", agent: "Omen", ovr: 85, potential: 92, aim: 86, igl: 72, salary: 61000, isSixth: true }
                         ]
                     },
                     {
@@ -1314,14 +1318,14 @@ header{background:rgba(4,9,15,.94)!important;border-bottom:1px solid #26384d!imp
                         ]
                     },
                     {
-                        name: "KIWOOM DRX", abbr: "KRX", logoDomain: "drx.gg", power: 79, color: "bg-blue-600 text-white",
+                        name: "KIWOOM DRX", abbr: "KRX", logoDomain: "drx.gg", power: 84, color: "bg-blue-600 text-white",
                         roster: [
-                            { name: "free1ng", role: "타격대", agent: "Viper", ovr: 79, salary: 87300 },
-                            { name: "MaKo", role: "전략가", agent: "Omen", ovr: 78, salary: 86200 },
-                            { name: "BeYN", role: "척후대", agent: "Sova", ovr: 77, salary: 85650 },
-                            { name: "HYUNMIN", role: "타격대", agent: "Neon", ovr: 76, salary: 85100 },
-                            { name: "yong", role: "타격대", agent: "Jett", ovr: 75, salary: 84550 },
-                            { name: "Flicker", role: "타격대", agent: "Killjoy", ovr: 75, salary: 84550, isSixth: true }
+                            { name: "free1ng", role: "타격대", agent: "Viper", ovr: 84, potential: 91, salary: 90000 },
+                            { name: "MaKo", role: "전략가", agent: "Omen", ovr: 83, potential: 92, salary: 89500 },
+                            { name: "BeYN", role: "척후대", agent: "Sova", ovr: 82, potential: 90, salary: 88900 },
+                            { name: "HYUNMIN", role: "타격대", agent: "Neon", ovr: 81, potential: 89, salary: 88300 },
+                            { name: "yong", role: "타격대", agent: "Jett", ovr: 80, potential: 88, salary: 87700 },
+                            { name: "Flicker", role: "타격대", agent: "Killjoy", ovr: 80, potential: 88, salary: 87700, isSixth: true }
                         ]
                     },
                     {
@@ -1367,7 +1371,7 @@ header{background:rgba(4,9,15,.94)!important;border-bottom:1px solid #26384d!imp
                     { name: "T1 Academy", abbr: "T1A", power: 80, color: "bg-red-800 text-white", academy: true, roster: [
                         { name: "Impact", role: "타격대", agent: "Jett", ovr: 83, salary: 58800 },
                         { name: "wezzy", role: "타격대", agent: "Raze", ovr: 84, salary: 59900 },
-                        { name: "DH", role: "전략가", agent: "Omen", ovr: 77, salary: 52200 },
+                        { name: "DH", role: "전략가", agent: "Omen", ovr: 85, potential: 92, aim: 86, igl: 72, salary: 61000 },
                         { name: "Gnadel", role: "감시자", agent: "Cypher", ovr: 81, salary: 56600 },
                         { name: "DarK", role: "척후대", agent: "Sova", ovr: 80, salary: 55500 }
                     ] },
@@ -3089,6 +3093,7 @@ header{background:rgba(4,9,15,.94)!important;border-bottom:1px solid #26384d!imp
                 internationalTournament: null,
                 internationalHistory: [],
                 prizeHistory: [],
+                clubInvestments: { training: 0, academy: 0, scouting: 0, analytics: 0, marketing: 0 },
                 ewcTournament: null,
                 ewcHistory: [],
                 internationalHistoryView: null,
@@ -3106,6 +3111,7 @@ header{background:rgba(4,9,15,.94)!important;border-bottom:1px solid #26384d!imp
                 snsFeed: [],
                 homeNewsFeed: [],
                 bankrupt: false,
+                octoberBalancePatchVersion: 1,
                 logs: [`[2026 시즌 개막] ${regData.name} ${tier}부 리그의 ${teamObj.name} 감독으로 부임하셨습니다.`]
             };
 
@@ -3611,6 +3617,90 @@ header{background:rgba(4,9,15,.94)!important;border-bottom:1px solid #26384d!imp
             if(amount>0) recordPrizePayment('ewc',placement,amount,'EWC');
         }
 
+        // 2026.10 KRX / DH 밸런스 업데이트 — 기존 세이브에도 즉시 적용
+        function ensureOctoberBalancePatch() {
+            if (!state || state.octoberBalancePatchVersion === 1) return;
+            const dh = (state.players || []).find(p => p?.name === "DH");
+            if (dh) {
+                dh.ovr = Math.max(Number(dh.ovr || 0), 85);
+                dh.potential = Math.max(Number(dh.potential || 0), 92);
+                dh.aim = Math.max(Number(dh.aim || 0), 86);
+                dh.igl = Math.max(Number(dh.igl || 0), 72);
+                dh._patchBaseOvr = 85;
+                dh._patchBaseAim = 86;
+            }
+            (state.t1Teams || []).forEach(t => {
+                if (t?.name === "KIWOOM DRX") t.power = Math.max(Number(t.power || 0), 84);
+            });
+            (state.t2Teams || []).forEach(t => {
+                if (t?.name === "KIWOOM DRX") t.power = Math.max(Number(t.power || 0), 84);
+            });
+            state.octoberBalancePatchVersion = 1;
+            if (Array.isArray(state.logs)) state.logs.push("📈 [선수단 밸런스] DH 상향 및 KRX 선수단 전반 상향 적용");
+        }
+
+        function getTeamDatabaseEntry(teamName) {
+            const all = Object.values(VCT_DATA || {}).flatMap(r => [...(r.t1 || []), ...(r.t2 || [])]);
+            return all.find(t => t?.name === teamName) || null;
+        }
+
+        function getTeamLiveEntry(teamName) {
+            if (!state) return null;
+            return [...(state.t1Teams || []), ...(state.t2Teams || [])].find(t => t?.name === teamName) || null;
+        }
+
+        function openTeamDetailModal(teamName) {
+            const dbTeam = getTeamDatabaseEntry(teamName);
+            const liveTeam = getTeamLiveEntry(teamName);
+            if (!dbTeam && !liveTeam) { showToast("팀 정보를 찾을 수 없습니다."); return; }
+            const base = dbTeam || liveTeam;
+            const isMine = state?.myTeamName === teamName;
+            const roster = isMine && Array.isArray(state.players) ? state.players : (dbTeam?.roster || []);
+            const regionEntry = Object.entries(VCT_DATA || {}).find(([, r]) => [...(r.t1 || []), ...(r.t2 || [])].some(t => t?.name === teamName));
+            const regionKey = regionEntry?.[0] || state?.regionKey || "pacific";
+            const region = regionEntry?.[1]?.name || state?.regionName || "-";
+            const tier = regionEntry?.[1]?.t1?.some(t => t?.name === teamName) ? 1 : 2;
+            const power = isMine ? Math.round(calculateTeamPower()) : Number(liveTeam?.power ?? base?.power ?? 70);
+            const wins = Number(liveTeam?.w || 0), losses = Number(liveTeam?.l || 0);
+            const rosterRows = roster.map((p, i) => `
+                <div class="bg-val-dark border border-val-border rounded-xl p-3 flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-val-panel border border-val-border flex items-center justify-center text-xs font-black text-white">${i + 1}</div>
+                    <div class="min-w-0 flex-1">
+                        <div class="font-black text-white truncate">${nationalityBadge(p, teamName)} ${p.name}</div>
+                        <div class="text-[11px] text-val-muted mt-1">${getDisplayRole(p, teamName)} · ${p.agent || '-'}${p.isSixth ? ' · 6TH' : ''}</div>
+                    </div>
+                    <div class="text-right shrink-0"><div class="text-lg font-black text-val-accent">${p.ovr ?? '-'}</div><div class="text-[9px] text-val-muted">OVR · ${p.potential ?? '-'} POT</div></div>
+                </div>`).join('');
+            openModal(`
+                <div class="flex flex-col gap-4 max-h-[82vh] overflow-y-auto pr-1">
+                    <div class="bg-val-dark border border-val-border rounded-2xl p-5">
+                        <div class="flex items-center gap-4">
+                            ${renderTeamLogo(base, "w-14 h-14 text-base")}
+                            <div class="min-w-0 flex-1">
+                                <div class="text-[10px] font-black tracking-[.18em] text-val-red uppercase">TEAM PROFILE</div>
+                                <h2 class="text-2xl font-black text-white mt-1 truncate">${teamName}</h2>
+                                <div class="text-xs text-val-muted mt-1">${region} · ${tier === 1 ? '1부 VCT' : '2부 Challengers'}${isMine ? ' · MY TEAM' : ''}</div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 mt-4">
+                            <div class="bg-val-panel rounded-xl p-3 text-center"><div class="text-[9px] text-val-muted">TEAM POWER</div><div class="text-xl font-black text-white mt-1">${power}</div></div>
+                            <div class="bg-val-panel rounded-xl p-3 text-center"><div class="text-[9px] text-val-muted">RECORD</div><div class="text-xl font-black text-white mt-1">${wins}-${losses}</div></div>
+                            <div class="bg-val-panel rounded-xl p-3 text-center"><div class="text-[9px] text-val-muted">ROSTER</div><div class="text-xl font-black text-white mt-1">${roster.length}</div></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between mb-2"><h3 class="text-sm font-black text-white">ROSTER</h3><span class="text-[10px] text-val-muted">선수 이름을 누르면 선수 상세정보를 볼 수 있어.</span></div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${rosterRows || '<div class="text-val-muted text-sm py-6 text-center">등록된 로스터가 없습니다.</div>'}</div>
+                    </div>
+                    <button onclick="closeModal()" class="w-full bg-val-panel border border-val-border text-white font-bold py-2.5 rounded-xl">닫기</button>
+                </div>`);
+        }
+
+        function teamDetailName(teamName, extraClass = "") {
+            const safe = JSON.stringify(String(teamName || "")).replace(/</g, '\u003c');
+            return `<button type="button" class="team-detail-link ${extraClass}" onclick='openTeamDetailModal(${safe})' title="${String(teamName || '').replace(/"/g, '&quot;')} 팀 상세정보">${teamName || 'TBD'}</button>`;
+        }
+
         function archiveInternationalTournament(tournament) {
             if (!state || !tournament || !tournament.matches) return;
             if (!Array.isArray(state.internationalHistory)) state.internationalHistory = [];
@@ -4053,6 +4143,7 @@ header{background:rgba(4,9,15,.94)!important;border-bottom:1px solid #26384d!imp
             }
 
             applyPatchToPlayers(false);
+            ensureOctoberBalancePatch();
             ensureIGLState();
             const phase = getPhaseName(state.week);
             const tierBadge = state.tier === 1 ? `<span class="text-val-red font-bold">[1부 VCT]</span>` : `<span class="text-val-accent font-bold">[2부 Challengers]</span>`;
@@ -4128,26 +4219,48 @@ header{background:rgba(4,9,15,.94)!important;border-bottom:1px solid #26384d!imp
             const margin = Math.abs(myMapsWon - oppMapsWon);
             const reactions = [];
             const time = new Date().toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'});
-            const handlesWin = ['@VCTWatcher', '@rounddiff', '@tacticalfan', '@VALCommunity', '@mapcontrol'];
-            const handlesLoss = ['@VCTWatcher', '@rounddiff', '@tacticalfan', '@analystdesk', '@VALCommunity'];
+            const handlesWin = ['@VCTWatcher', '@rounddiff', '@tacticalfan', '@VALCommunity', '@mapcontrol', '@fragmovie', '@coachdiff', '@팬계정'];
+            const handlesLoss = ['@VCTWatcher', '@rounddiff', '@tacticalfan', '@analystdesk', '@VALCommunity', '@tiltedfan', '@roundreview', '@팬계정'];
             const handles = isWin ? handlesWin : handlesLoss;
             const winTexts = [
                 `${state.myTeamName} 오늘 경기력 진짜 좋았는데? ${myMapsWon}-${oppMapsWon} ㄷㄷ`,
                 `${mvp.name} 오늘 폼 미쳤다. MVP 받을 만했음`,
                 `${topFrag.name} ${topFrag.kills}킬이면 상대 입장에선 너무 빡셌겠다`,
                 `이 팀 경기 갈수록 합이 좋아지는 듯`,
-                `${oppName} 상대로 이 정도면 다음 경기 기대해볼 만하다`
+                `${oppName} 상대로 이 정도면 다음 경기 기대해볼 만하다`,
+                `와 이걸 이기네 ㅋㅋ 오늘은 진짜 잘했다`,
+                `마지막 라운드 판단 뭐냐 개깔끔하네`,
+                `${mvp.name} 이 정도면 오늘 캐리 제대로 했네`,
+                `팬들 오늘 잠 못 자겠네 ㅋㅋ`,
+                `이 경기력 계속 나오면 꽤 재밌겠다`,
+                `상대가 준비한 거 다 읽은 느낌인데?`,
+                `오늘은 그냥 팀합이 압도적이었음`,
+                `이건 인정. 오늘은 우리가 잘했다`,
+                `와 막판 클러치 개쩐다`,
+                `경기 보면서 소리 지른 사람 나뿐이냐 ㅋㅋ`
             ];
             const lossTexts = [
                 `${state.myTeamName} ${myMapsWon}-${oppMapsWon} 아쉽다. 다음 경기에서 반등해야 함`,
                 `${mvp.name}은 그래도 끝까지 해줬네`,
                 `${topFrag.name} ${topFrag.kills}킬... 나머지 교전이 아쉬웠다`,
                 `상대 ${oppName}가 오늘 준비를 잘해왔네`,
-                `아직 시즌 길다. 이 경기 하나로 판단하긴 이르지`
+                `아직 시즌 길다. 이 경기 하나로 판단하긴 이르지`,
+                `아니 이걸 지네 ㅋㅋ 진짜 아깝다`,
+                `후반 운영에서 좀 꼬인 듯`,
+                `오늘은 교전이 너무 안 풀렸다`,
+                `이건 좀 답답했네... 다음 경기 잘하자`,
+                `초반에 벌어놓고 왜 이렇게 됐냐`,
+                `상대가 막판에 너무 잘 버텼다`,
+                `오늘은 그냥 상대가 더 잘했음`,
+                `이 경기 보고 멘탈 나간 팬들 많을 듯`,
+                `아 ㅅㅂ 마지막 라운드 너무 아깝네`,
+                `이건 진짜 아쉽다. 다음엔 제대로 복수하자`
             ];
             const texts = isWin ? winTexts : lossTexts;
-            for (let i=0;i<3;i++) {
-                reactions.push({ handle: handles[i], text: texts[i], time });
+            const count = 4 + Math.floor(Math.random() * 3);
+            const shuffled = texts.slice().sort(() => Math.random() - 0.5);
+            for (let i=0;i<count;i++) {
+                reactions.push({ handle: handles[i % handles.length], text: shuffled[i], time });
             }
             if (margin >= 1) {
                 reactions.push({ handle: '@matchthread', text: isWin ? `경기 결과: ${state.myTeamName} ${myMapsWon}-${oppMapsWon} ${oppName}` : `${state.myTeamName} ${myMapsWon}-${oppMapsWon} ${oppName}. 다음 경기에서 분위기 전환 필요`, time });
@@ -4948,6 +5061,7 @@ header{background:rgba(4,9,15,.94)!important;border-bottom:1px solid #26384d!imp
         }
 
         function renderFinanceView() {
+            ensureClubInvestmentState();
             const weeklyWages = Math.round(state.players.reduce((sum, p) => sum + p.salary, 0) / 52);
             const fixedCost = state.tier === 1 ? 40000 : 20000;
             const totalUpkeep = fixedCost + weeklyWages;
@@ -4994,6 +5108,26 @@ header{background:rgba(4,9,15,.94)!important;border-bottom:1px solid #26384d!imp
                         </div>
                     </div>
 
+                    <div class="bg-val-panel border border-val-border rounded-xl p-5 md:col-span-2">
+                        <div class="border-b border-val-border pb-3 mb-4 flex items-center justify-between gap-3">
+                            <div><h2 class="text-lg font-bold text-white">🏗️ 구단 투자</h2><p class="text-xs text-val-muted mt-1">우승 상금과 스폰서 수익을 선수단과 구단 인프라에 재투자할 수 있습니다. 각 시설은 최대 Lv.5입니다.</p></div>
+                            <span class="text-xs font-black text-green-400">현재 자금 ${formatMoney(state.cash)}</span>
+                        </div>
+                        <div class="grid sm:grid-cols-2 xl:grid-cols-5 gap-3">
+                            ${Object.entries(CLUB_INVESTMENTS).map(([key,cfg]) => {
+                                const level = state.clubInvestments[key] || 0;
+                                const cost = getClubInvestmentCost(key);
+                                const maxed = level >= 5;
+                                return `<div class="bg-val-dark border border-val-border rounded-xl p-4 flex flex-col justify-between">
+                                    <div><div class="text-2xl">${cfg.icon}</div><div class="font-black text-white mt-2">${cfg.name}</div><div class="text-[11px] text-val-muted mt-1 leading-5">${cfg.desc}</div></div>
+                                    <div class="mt-4"><div class="flex items-center justify-between text-xs mb-2"><span class="text-val-muted">시설 레벨</span><b class="text-val-accent">Lv.${level} / 5</b></div>
+                                    <div class="h-1.5 bg-gray-800 rounded-full overflow-hidden mb-3"><div class="h-full bg-val-red" style="width:${level*20}%"></div></div>
+                                    <button onclick="upgradeClubInvestment('${key}')" class="w-full px-3 py-2 rounded-lg text-xs font-black ${maxed ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-val-red hover:bg-val-redHover text-white'}" ${maxed ? 'disabled' : ''}>${maxed ? 'MAX' : `투자 ${formatMoney(cost)}`}</button></div>
+                                </div>`;
+                            }).join('')}
+                        </div>
+                    </div>
+
                     <div class="bg-val-panel border border-val-border rounded-xl p-5 flex flex-col justify-between">
                         <div>
                             <div class="border-b border-val-border pb-3 mb-4">
@@ -5033,7 +5167,7 @@ header{background:rgba(4,9,15,.94)!important;border-bottom:1px solid #26384d!imp
                     </td>
                     <td class="py-3 px-4 font-bold text-white flex items-center gap-2.5">
                         ${renderTeamLogo(t, "w-7 h-7 text-xs")} 
-                        <span>${t.name}</span>
+                        ${teamDetailName(t.name, "text-left font-black hover:text-cyan-300 transition truncate")}
                         ${isMyTeam ? '<span class="text-[10px] bg-val-red text-white font-bold px-1.5 py-0.5 rounded ml-1">MY TEAM</span>' : ''}
                     </td>
                     <td class="py-3 px-4 text-center font-semibold text-val-muted">${t.power}</td>
@@ -6130,7 +6264,7 @@ function renderMatchPreview(opp, phase, isInternational, isQualified) {
           <div class="match-preview-vs">VS<small>BO3</small></div>
           <div class="match-preview-team">
             ${oppLogo}
-            <div class="match-preview-name">${opp.name}</div>
+            <div class="match-preview-name">${teamDetailName(opp.name, "text-white hover:text-cyan-300 transition")}</div>
             <div class="match-preview-power">TEAM POWER ${exp.oppPower}</div>
           </div>
         </div>
@@ -7521,6 +7655,66 @@ function ensureIndividualTrainingState(player) {
                 return trainIndividual(playerIndex,'attr:utility');
             } else return;
             player.individualTrainingDone=true; state.logs.push(`🏋️ [개인 훈련] ${player.name} — ${message}`); showToast(`${player.name}: ${message}`); renderApp();
+        }
+
+        function ensureClubInvestmentState() {
+            if (!state.clubInvestments || typeof state.clubInvestments !== 'object') state.clubInvestments = {};
+            const defaults = { training: 0, academy: 0, scouting: 0, analytics: 0, marketing: 0 };
+            Object.keys(defaults).forEach(k => {
+                const v = Number(state.clubInvestments[k]);
+                state.clubInvestments[k] = Number.isFinite(v) ? Math.max(0, Math.min(5, Math.floor(v))) : 0;
+            });
+            return state.clubInvestments;
+        }
+
+        const CLUB_INVESTMENTS = {
+            training: { name: '훈련 센터', icon: '🏋️', desc: '코칭 인프라를 강화해 선수 성장과 팀 훈련 효율을 높입니다.', costs: [120000, 220000, 350000, 520000, 750000] },
+            academy: { name: '아카데미 시설', icon: '🏫', desc: '유망주 육성 환경을 개선하고 아카데미 성장력을 높입니다.', costs: [100000, 180000, 300000, 450000, 650000] },
+            scouting: { name: '스카우팅 네트워크', icon: '🔎', desc: '더 좋은 유망주와 선수 정보를 확보할 수 있습니다.', costs: [80000, 150000, 250000, 380000, 550000] },
+            analytics: { name: '데이터 분석실', icon: '📊', desc: '상대 분석과 경기 준비를 강화합니다.', costs: [90000, 170000, 280000, 420000, 600000] },
+            marketing: { name: '브랜드·콘텐츠 센터', icon: '📣', desc: '팬덤과 구단 인지도를 높여 장기적인 구단 가치를 키웁니다.', costs: [100000, 190000, 320000, 480000, 700000] }
+        };
+
+        function getClubInvestmentCost(type) {
+            ensureClubInvestmentState();
+            const cfg = CLUB_INVESTMENTS[type];
+            const level = state.clubInvestments[type] || 0;
+            return cfg && level < 5 ? cfg.costs[level] : 0;
+        }
+
+        function upgradeClubInvestment(type) {
+            if (!careerActionAllowed()) return;
+            ensureClubInvestmentState();
+            const cfg = CLUB_INVESTMENTS[type];
+            if (!cfg) return;
+            const level = state.clubInvestments[type] || 0;
+            if (level >= 5) { showToast('이미 최고 단계입니다.'); return; }
+            const cost = cfg.costs[level];
+            if (state.cash < cost) { showToast('자금이 부족합니다!'); return; }
+
+            state.cash -= cost;
+            state.clubInvestments[type] = level + 1;
+
+            if (type === 'training') {
+                state.coach = Math.min(100, (state.coach || 45) + 5);
+                state.form = Math.min(100, (state.form || 60) + 2);
+            } else if (type === 'academy') {
+                state.youthLevel = Math.min(5, (state.youthLevel || 1) + 1);
+                generateYouthProspects(2);
+            } else if (type === 'scouting') {
+                state.scoutNetworkLevel = Math.min(5, (state.scoutNetworkLevel || 0) + 1);
+                state.analyst = Math.min(100, (state.analyst || 40) + 3);
+            } else if (type === 'analytics') {
+                state.analyst = Math.min(100, (state.analyst || 40) + 6);
+            } else if (type === 'marketing') {
+                state.fan = Math.min(100, (state.fan || 20) + 8);
+                state.reputation = Math.min(100, (state.reputation || 35) + 3);
+            }
+
+            state.logs.push(`🏗️ [구단 투자] ${cfg.name} Lv.${level + 1} · ${formatMoney(cost)} 투자`);
+            recordOfficialNews(`${cfg.name} 투자`, `${state.myTeamName}이(가) ${formatMoney(cost)}를 투자해 ${cfg.name}을(를) Lv.${level + 1}로 확장했습니다.`, '🏗️');
+            showToast(`${cfg.name} Lv.${level + 1} 투자 완료!`);
+            renderApp();
         }
 
         function upgradeStaff(type) {
